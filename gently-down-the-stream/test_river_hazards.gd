@@ -81,5 +81,22 @@ func _run() -> void:
 	chase.clock = 23.2
 	hazards.update_jumping_fish()
 	assert(hazards.jumpers[0].visible, "Fish jumps must repeat occasionally")
+	river.boat_health = 100.0
+	var object = Node3D.new()
+	river.add_child(object)
+	assert(river.apply_object_damage(object, 15.0, "Test rock"), "First object hit must apply its original damage")
+	assert(is_equal_approx(river.boat_health, 85.0), "Rock damage must remain 15 points")
+	assert(not river.apply_object_damage(object, 15.0, "Test rock"), "Repeated contact with same object must be ignored")
+	assert(is_equal_approx(river.boat_health, 85.0), "Repeated contact must not drain health")
+	var other_object = Node3D.new()
+	river.add_child(other_object)
+	assert(river.apply_object_damage(other_object, 10.0, "Test log"), "Different object must still penalise boat")
+	assert(is_equal_approx(river.boat_health, 75.0), "Log damage must remain 10 points")
+	river.elapsed_time += 1.99
+	assert(not river.apply_object_damage(object, 15.0, "Test rock"), "Same object must wait the full two seconds")
+	river.elapsed_time += 0.02
+	assert(river.apply_object_damage(object, 15.0, "Test rock"), "Same object must damage again after two seconds")
+	assert(is_equal_approx(river.boat_health, 60.0), "Repeated damage must preserve original amount")
+	assert(not river.apply_object_damage(object, 15.0, "Test rock"), "Cooldown must restart after each damage tick")
 	print("PASS: course-wide trees, warning and fall timing, clear lane, tree damage, snapshots, local whirlpool forces, leak stages and occasional fish jumps")
 	quit(0)

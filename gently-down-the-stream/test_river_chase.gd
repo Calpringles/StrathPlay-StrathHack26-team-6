@@ -42,12 +42,13 @@ func _run() -> void:
 	assert(is_equal_approx(river.boat_health, 88.0), "One crossing must not repeatedly damage hull")
 	var half_crossing = (PI / 2.0) * chase.CROCODILE_PATROL_WIDTH / chase.crocodile_speed
 	chase.clock += half_crossing
+	river.elapsed_time += half_crossing
 	chase._update_crocodiles(true)
 	assert(croc.visible and is_equal_approx(croc.position.x, chase.CROCODILE_PATROL_WIDTH), "Crocodile must stay visible at the bank")
 	chase.clock += half_crossing
 	chase._update_crocodiles(true)
 	assert(croc.visible and absf(croc.position.x) < 0.01, "Crocodile must swim back across the river")
-	assert(is_equal_approx(river.boat_health, 76.0), "Returning crocodile may damage the boat after separating")
+	assert(is_equal_approx(river.boat_health, 76.0), "Returning crocodile may damage boat again after two seconds")
 	chase.clock += 20.0 * PI * chase.CROCODILE_PATROL_WIDTH / chase.crocodile_speed
 	chase._update_crocodiles(false)
 	assert(croc.visible and absf(croc.position.x) <= chase.CROCODILE_PATROL_WIDTH, "Patrol must continue after many crossings")

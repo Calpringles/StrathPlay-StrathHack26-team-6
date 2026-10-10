@@ -19,6 +19,7 @@ extends Control
 @onready var copy_ip_button: Button = $CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox/CopyIPButton
 @onready var player_list_container: VBoxContainer = $CenterContainer/RoomPanel/MainHBox/LeftVBox/PlayerListScroll/PlayerList
 @onready var start_button: Button = $CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow/StartGameButton
+@onready var ready_button: Button = $CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow/ReadyButton
 @onready var leave_button: Button = $CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow/LeaveRoomButton
 
 @onready var seat_buttons: Array[Button] = [
@@ -74,7 +75,33 @@ const TARGET_GAME_SCENE = "res://river.tscn"
 var current_customization: Dictionary = {}
 var preview_rower: Node3D = null
 
+func _setup_river_background() -> void:
+	var container = SubViewportContainer.new()
+	container.name = "RiverBackground"
+	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	container.stretch = true
+	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(container)
+	move_child(container, 0)
+	var viewport = SubViewport.new()
+	viewport.name = "SceneryViewport"
+	viewport.size = Vector2i(get_viewport_rect().size)
+	viewport.own_world_3d = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	container.add_child(viewport)
+	var scenery = load(TARGET_GAME_SCENE).instantiate()
+	scenery.preview_mode = true
+	scenery.process_mode = Node.PROCESS_MODE_DISABLED
+	# The menu preview never participates in the multiplayer boat session.
+	var synchronizer = scenery.get_node_or_null("Boat/MultiplayerSynchronizer")
+	if synchronizer != null:
+		synchronizer.free()
+	viewport.add_child(scenery)
+	$Background.color = Color(0.025, 0.06, 0.09, 0.22)
+	$Background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 func _ready() -> void:
+	_setup_river_background()
 	connect_panel.visible = true
 	room_panel.visible = false
 	connect_status_label.text = ""
@@ -87,6 +114,7 @@ func _ready() -> void:
 	host_button.pressed.connect(_on_host_pressed)
 	join_button.pressed.connect(_on_join_pressed)
 	start_button.pressed.connect(_on_start_game_pressed)
+	ready_button.pressed.connect(_on_ready_pressed)
 	leave_button.pressed.connect(_on_leave_pressed)
 	copy_ip_button.pressed.connect(_on_copy_ip_pressed)
 
@@ -254,7 +282,8 @@ func _update_room_ui() -> void:
 		var is_you = " [YOU]" if peer_id == my_id else ""
 		
 		var lbl = Label.new()
-		lbl.text = "• %s%s  -->  %s" % [p_info.get("name", "Unknown"), is_you, seat_str]
+		var ready_status = "HOST" if peer_id == 1 else ("READY" if p_info.get("ready", false) else "NOT READY")
+		lbl.text = "• %s%s  -->  %s [%s]" % [p_info.get("name", "Unknown"), is_you, seat_str, ready_status]
 		player_list_container.add_child(lbl)
 
 	# Update seat buttons
@@ -282,7 +311,19 @@ func _update_room_ui() -> void:
 
 	# Host controls
 	start_button.visible = is_server
-	start_button.disabled = not is_server or seated_count == 0
+	start_button.disabled = not is_server or not NetworkManager.can_start_game()
+	start_button.text = "Start Game" if not start_button.disabled else "Waiting for crew"
+	ready_button.visible = not is_server
+	var local_info: Dictionary = NetworkManager.players.get(my_id, {})
+	ready_button.disabled = not NetworkManager.is_connection_ready() or local_info.get("seat", -1) < 0
+	ready_button.text = "Unready" if local_info.get("ready", false) else "Ready Up"
+	ready_button.tooltip_text = "Choose an oar first" if ready_button.disabled else "Let the host know you are ready"
+
+func _on_ready_pressed() -> void:
+	if not NetworkManager.is_connection_ready() or multiplayer.is_server():
+		return
+	var local_info: Dictionary = NetworkManager.players.get(multiplayer.get_unique_id(), {})
+	NetworkManager.request_player_ready.rpc_id(1, not local_info.get("ready", false))
 
 func _on_start_game_pressed() -> void:
 	NetworkManager.start_game(TARGET_GAME_SCENE)

@@ -163,13 +163,8 @@ func _update_crocodiles(authority: bool) -> void:
 		croc.visible = true
 		if authority and river.game_state == river.GameState.PLAYING:
 			var touching = absf(boat.position.x - croc.position.x) < 2.1 and absf(boat.position.z - z) < 2.6
-			if not touching and clock >= float(croc.get_meta("hit_until")):
-				croc.set_meta("hit", false)
-			if touching and not croc.get_meta("hit"):
-				croc.set_meta("hit", true)
-				croc.set_meta("hit_until", clock + 1.5)
+			if touching and river.apply_object_damage(croc, 12.0, "Crocodile! Keep rowing!"):
 				boat.velocity *= 0.55
-				river._apply_damage(12.0, "Crocodile! Keep rowing!")
 
 func _process(delta: float) -> void:
 	if not river._is_game_authority() and river.game_state == river.GameState.PLAYING:

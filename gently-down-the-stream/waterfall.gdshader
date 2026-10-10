@@ -6,9 +6,11 @@ void vertex() {
 }
 
 void fragment() {
-	float streak = sin(UV.x * 180.0 + sin(UV.y * 12.0 - TIME * 6.0) * 2.0);
-	float froth = smoothstep(0.15, 0.8, streak);
-	ALBEDO = mix(vec3(0.08, 0.5, 0.65), vec3(0.92, 0.98, 1.0), froth);
+	float flow = UV.y * 95.0 - TIME * 9.0;
+	float streak = sin(UV.x * 150.0 + sin(flow * 0.3) * 1.2);
+	float spray = sin(flow + UV.x * 40.0) * sin(UV.x * 70.0 - TIME * 2.0);
+	float froth = smoothstep(-0.4, 0.8, streak + spray * 0.7);
+	ALBEDO = mix(vec3(0.18, 0.6, 0.78), vec3(0.95, 0.99, 1.0), froth);
 	ROUGHNESS = 0.3;
-	EMISSION = vec3(0.08, 0.13, 0.15) * froth;
+	EMISSION = vec3(0.14, 0.2, 0.23) * froth;
 }

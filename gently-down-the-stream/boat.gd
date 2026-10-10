@@ -410,7 +410,7 @@ func _update_seat_labels() -> void:
 					CharacterCustomizer.apply_to_rower(rowers[s_idx], nm.local_customization)
 
 			if s_idx == local_seat:
-				seat_labels[s_idx].text = "%s\n[YOU - Click to Row]" % SEAT_NAMES[s_idx]
+				seat_labels[s_idx].text = "%s\n[YOU - Space / Click to Row]" % SEAT_NAMES[s_idx]
 				seat_labels[s_idx].modulate = Color(0.4, 1.0, 0.5)
 			else:
 				seat_labels[s_idx].text = "%s\n[Press %d to Row]" % [SEAT_NAMES[s_idx], s_idx + 1]
@@ -439,7 +439,7 @@ func _physics_process(delta: float) -> void:
 	_update_visuals(delta)
 
 func _handle_local_input() -> void:
-	# Primary row action (Left click or assigned "row" action)
+	# Primary row action (Space or left click)
 	if Input.is_action_just_pressed("row"):
 		_request_stroke(local_seat, false)
 

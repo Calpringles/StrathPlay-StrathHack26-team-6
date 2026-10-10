@@ -6,6 +6,7 @@ const RIVER_WIDTH: float = 18.0 # From X = -9.0 to +9.0
 const RIVER_LENGTH: float = 1000.0 # 1000 meters to finish line
 const OBSTACLE_SEED: int = 42819
 const WATERFALL_Z: float = -1018.0
+@export var preview_mode: bool = false
 var victory_elapsed: float = 0.0
 var victory_start_x: float = 0.0
 var victory_title: Label
@@ -47,6 +48,8 @@ var damage_flash_rect: ColorRect
 
 # Damage cooldown
 var damage_cooldown: float = 0.0
+var damaged_objects: Dictionary = {}
+const OBJECT_DAMAGE_INTERVAL: float = 2.0
 
 func _ready() -> void:
 	_create_environment()
@@ -54,6 +57,12 @@ func _ready() -> void:
 	_create_river_banks()
 	_generate_obstacles()
 	_decorate_banks()
+	if preview_mode:
+		boat.set_physics_process(false)
+		camera.set_as_top_level(true)
+		camera.global_position = Vector3(7, 4.5, 9)
+		camera.look_at(Vector3(0, 0.7, -22), Vector3.UP)
+		return
 	_create_start_banner()
 	_create_finish_line()
 	_create_waterfall()
@@ -824,7 +833,7 @@ func _create_hud() -> void:
 	bottom_panel.add_child(bottom_vbox)
 
 	var hint_lbl = Label.new()
-	hint_lbl.text = "• Left Click: Row Forward | Right Click: Backwater/Turn | Keys 1-6: Row Any Seat (Offline) | Call timing in Discord for Sync Surge!"
+	hint_lbl.text = "• Space / Left Click: Row | Right Click: Backwater/Turn | Keys 1-6: Row Any Seat (Offline) | Time strokes together for Sync Surge!"
 	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_lbl.add_theme_font_size_override("font_size", 14)
 	hint_lbl.modulate = Color(0.9, 0.9, 0.9, 0.8)
@@ -982,6 +991,8 @@ func _physics_process(_delta: float) -> void:
 			var col = boat.get_slide_collision(i)
 			var collider = col.get_collider()
 			if collider != null:
+				if not can_damage_from_object(collider):
+					continue
 				var col_name = collider.name
 				var dmg = 0.0
 				if collider.is_in_group("river_damage_obstacle") or col_name.begins_with("Rock"):
@@ -994,7 +1005,7 @@ func _physics_process(_delta: float) -> void:
 					dmg = 18.0
 
 				if dmg > 0.0:
-					_apply_damage(dmg, "Collided with %s!" % col_name)
+					apply_object_damage(collider, dmg, "Collided with %s!" % col_name)
 					collided_obstacle = true
 					break
 
@@ -1007,11 +1018,22 @@ func _physics_process(_delta: float) -> void:
 	if damage_cooldown <= 0.0:
 		var obstacles := get_tree().get_nodes_in_group("river_damage_obstacle")
 		for obstacle in obstacles:
-			if is_instance_valid(obstacle) and boat.global_position.distance_to(obstacle.global_position) < 2.6:
+			if is_instance_valid(obstacle) and can_damage_from_object(obstacle) and boat.global_position.distance_to(obstacle.global_position) < 2.6:
 				var hit_damage := 10.0 if obstacle.name.begins_with("Log") else 15.0
-				_apply_damage(hit_damage, "Collided with %s!" % obstacle.name)
+				apply_object_damage(obstacle, hit_damage, "Collided with %s!" % obstacle.name)
 				damage_cooldown = 0.6
 				break
+
+func can_damage_from_object(object: Node) -> bool:
+	return elapsed_time >= float(damaged_objects.get(object.get_instance_id(), -OBJECT_DAMAGE_INTERVAL))
+
+func apply_object_damage(object: Node, amount: float, reason: String) -> bool:
+	var object_id = object.get_instance_id()
+	if not can_damage_from_object(object) or game_state != GameState.PLAYING or not _is_game_authority():
+		return false
+	damaged_objects[object_id] = elapsed_time + OBJECT_DAMAGE_INTERVAL
+	_apply_damage(amount, reason)
+	return true
 
 func _apply_damage(amount: float, reason: String) -> void:
 	var new_health = maxf(0.0, boat_health - amount)
@@ -1167,6 +1189,80 @@ func _create_waterfall() -> void:
 	foam_material.albedo_color = Color(0.9, 0.98, 1)
 	foam.material_override = foam_material
 	add_child(foam)
+	_create_waterfall_rainbow()
+	_create_waterfall_spray()
+
+func _create_waterfall_rainbow() -> void:
+	var rainbow = MeshInstance3D.new()
+	rainbow.name = "WaterfallRainbow"
+	var surface = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var colors = [Color(1, 0.18, 0.15, 0.55), Color(1, 0.52, 0.1, 0.55), Color(1, 0.9, 0.16, 0.55), Color(0.25, 0.88, 0.38, 0.55), Color(0.15, 0.65, 1, 0.55), Color(0.35, 0.3, 0.9, 0.55), Color(0.72, 0.3, 0.9, 0.55)]
+	for band in range(colors.size()):
+		var outer = 12.0 - band * 0.3
+		var inner = outer - 0.3
+		for segment in range(64):
+			var a = PI * segment / 64.0
+			var b = PI * (segment + 1) / 64.0
+			var points = [Vector3(cos(a) * outer, sin(a) * outer, 0), Vector3(cos(b) * outer, sin(b) * outer, 0), Vector3(cos(a) * inner, sin(a) * inner, 0), Vector3(cos(a) * inner, sin(a) * inner, 0), Vector3(cos(b) * outer, sin(b) * outer, 0), Vector3(cos(b) * inner, sin(b) * inner, 0)]
+			for point in points:
+				surface.set_color(colors[band])
+				surface.set_normal(Vector3.FORWARD)
+				surface.add_vertex(point)
+	rainbow.mesh = surface.commit()
+	var material = StandardMaterial3D.new()
+	material.vertex_color_use_as_albedo = true
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	rainbow.material_override = material
+	rainbow.position = Vector3(0, -16.5, WATERFALL_Z - 8)
+	add_child(rainbow)
+
+func _create_waterfall_spray() -> void:
+	var mist = CPUParticles3D.new()
+	mist.name = "WaterfallMist"
+	mist.position = Vector3(0, -17, WATERFALL_Z - 1.5)
+	mist.amount = 100
+	mist.lifetime = 2.5
+	mist.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	mist.emission_box_extents = Vector3(8, 0.25, 1.5)
+	mist.direction = Vector3(0, 1, -0.2)
+	mist.spread = 35
+	mist.initial_velocity_min = 1.5
+	mist.initial_velocity_max = 3.0
+	mist.gravity = Vector3(0, -0.5, 0)
+	var puff = QuadMesh.new()
+	puff.size = Vector2(1.5, 1.5)
+	var material = ShaderMaterial.new()
+	material.shader = load("res://waterfall_mist.gdshader")
+	puff.material = material
+	mist.mesh = puff
+	var fade = Gradient.new()
+	fade.set_color(0, Color(1, 1, 1, 0.35))
+	fade.set_color(1, Color(1, 1, 1, 0))
+	mist.color_ramp = fade
+	add_child(mist)
+	var spray = CPUParticles3D.new()
+	spray.name = "WaterfallSpray"
+	spray.position = Vector3(0, -0.25, WATERFALL_Z - 0.25)
+	spray.amount = 140
+	spray.lifetime = 2.0
+	spray.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	spray.emission_box_extents = Vector3(8.5, 0.15, 0.15)
+	spray.direction = Vector3(0, -1, -0.12)
+	spray.spread = 10
+	spray.initial_velocity_min = 1.5
+	spray.initial_velocity_max = 3.0
+	spray.gravity = Vector3(0, -9, 0)
+	var droplet = SphereMesh.new()
+	droplet.radius = 0.07
+	droplet.height = 0.22
+	var droplet_material = StandardMaterial3D.new()
+	droplet_material.albedo_color = Color(0.82, 0.95, 1)
+	droplet.material = droplet_material
+	spray.mesh = droplet
+	add_child(spray)
 
 func _on_retry_pressed() -> void:
 	if not _is_game_authority():

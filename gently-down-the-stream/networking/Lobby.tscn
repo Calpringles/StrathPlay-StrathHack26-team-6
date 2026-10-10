@@ -199,6 +199,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Leave Room"
 
+[node name="ReadyButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow" unique_id=252257894]
+visible = false
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ready Up"
+
 [node name="StartGameButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow" unique_id=251958222]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2

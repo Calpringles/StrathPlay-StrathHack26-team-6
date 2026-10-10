@@ -127,7 +127,7 @@ func update_trees(authority: bool) -> void:
 			if absf(distance) < 2.7 and boat.position.x >= minf(tip_x, tree.position.x) - 0.8 and boat.position.x <= maxf(tip_x, tree.position.x) + 0.8:
 				tree.set_meta("hit", true)
 				if river.damage_cooldown <= 0.0:
-					river._apply_damage(18.0, "Falling tree!")
+					river.apply_object_damage(tree.get_node(tree.get_meta("body_name")), 18.0, "Falling tree!")
 					river.damage_cooldown = 0.8
 					boat.velocity *= 0.6
 

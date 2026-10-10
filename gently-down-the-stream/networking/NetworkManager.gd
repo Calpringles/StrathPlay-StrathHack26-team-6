@@ -142,7 +142,8 @@ func _register_player(player_name: String, custom_data: Dictionary = {}) -> void
 	players[sender_id] = {
 		"name": player_name,
 		"seat": -1,
-		"customization": custom_data
+		"customization": custom_data,
+		"ready": false
 	}
 	_sync_players_to_clients.rpc(players)
 	player_connected.emit(sender_id, players[sender_id])
@@ -190,13 +191,41 @@ func request_seat(seat_index: int) -> void:
 		if players[id].get("seat", -1) == seat_index and id != sender_id:
 			return # Taken
 	if players.has(sender_id):
+		if players[sender_id].get("seat", -1) != seat_index:
+			players[sender_id]["ready"] = false
 		players[sender_id]["seat"] = seat_index
 		_sync_players_to_clients.rpc(players)
 
 # --- Start Game Scene Sync ---
 
-func start_game(scene_path: String) -> void:
+@rpc("any_peer", "reliable")
+func request_player_ready(is_ready: bool) -> void:
 	if not multiplayer.is_server():
+		return
+	var sender_id = multiplayer.get_remote_sender_id()
+	if sender_id <= 1 or not players.has(sender_id):
+		return
+	if is_ready and players[sender_id].get("seat", -1) < 0:
+		return
+	players[sender_id]["ready"] = is_ready
+	_sync_players_to_clients.rpc(players)
+
+func can_start_game() -> bool:
+	if not players.has(1):
+		return false
+	var has_seated_player = false
+	for id in players:
+		has_seated_player = has_seated_player or players[id].get("seat", -1) >= 0
+		if id != 1 and not players[id].get("ready", false):
+			return false
+	# A connected peer still registering must also block the start.
+	for id in multiplayer.get_peers():
+		if not players.has(id):
+			return false
+	return has_seated_player
+
+func start_game(scene_path: String) -> void:
+	if not multiplayer.is_server() or not can_start_game():
 		return
 	# Ensure every peer has the final names, seats, and customization data
 	# before the river scene is created on each machine.
