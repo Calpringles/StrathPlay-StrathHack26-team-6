@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cqex5yaf8gsi5"
-path="res://.godot/imported/Paddle.fbx-193f02fee06882a0f5db88f437a99d6c.scn"
+uid="uid://cw1p25tstc6av"
+path="res://.godot/imported/Tree_Bare_2_A_Color1.fbx-39b963ba41a66a372ec4e79b8cb1d80d.scn"
 
 [deps]
 
-source_file="res://boatassets/Paddle.fbx"
-dest_files=["res://.godot/imported/Paddle.fbx-193f02fee06882a0f5db88f437a99d6c.scn"]
+source_file="res://Game-Assets/GameWorld-Assets/fbx/Tree_Bare_2_A_Color1.fbx"
+dest_files=["res://.godot/imported/Tree_Bare_2_A_Color1.fbx-39b963ba41a66a372ec4e79b8cb1d80d.scn"]
 
 [params]
 

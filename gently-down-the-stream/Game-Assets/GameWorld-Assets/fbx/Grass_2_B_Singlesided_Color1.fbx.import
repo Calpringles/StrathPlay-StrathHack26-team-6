@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://un4p8wna6dt6"
-path="res://.godot/imported/Wood_BoatV1.fbx-87fb59d2984fe8337420b46a464de81c.scn"
+uid="uid://d0ly50kfwyxjm"
+path="res://.godot/imported/Grass_2_B_Singlesided_Color1.fbx-633d072ca49ed26d7c2acac64fe14a17.scn"
 
 [deps]
 
-source_file="res://boatassets/Wood_BoatV1.fbx"
-dest_files=["res://.godot/imported/Wood_BoatV1.fbx-87fb59d2984fe8337420b46a464de81c.scn"]
+source_file="res://Game-Assets/GameWorld-Assets/fbx/Grass_2_B_Singlesided_Color1.fbx"
+dest_files=["res://.godot/imported/Grass_2_B_Singlesided_Color1.fbx-633d072ca49ed26d7c2acac64fe14a17.scn"]
 
 [params]
 
