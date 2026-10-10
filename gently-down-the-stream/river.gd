@@ -60,20 +60,30 @@ func _ready() -> void:
 		cam_base_pos = camera.position
 
 func _create_environment() -> void:
-	# Add WorldEnvironment with river sky/fog if not already present
+	# Add WorldEnvironment with river procedural sky/fog if not already present
 	var env_node: WorldEnvironment = get_node_or_null("WorldEnvironment")
 	if env_node == null:
 		env_node = WorldEnvironment.new()
 		env_node.name = "WorldEnvironment"
 		var env: Environment = Environment.new()
-		env.background_mode = Environment.BG_COLOR
-		env.background_color = Color("#87ceeb") # Sky blue
-		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color("#d0e8f2")
-		env.ambient_light_energy = 0.8
+		
+		# Procedural daylight sky
+		var sky_mat: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
+		sky_mat.sky_top_color = Color(0.38, 0.64, 0.90, 1.0)
+		sky_mat.sky_horizon_color = Color(0.68, 0.78, 0.84, 1.0)
+		sky_mat.ground_bottom_color = Color(0.18, 0.22, 0.18, 1.0)
+		sky_mat.ground_horizon_color = Color(0.68, 0.78, 0.84, 1.0)
+		var sky: Sky = Sky.new()
+		sky.sky_material = sky_mat
+		env.background_mode = Environment.BG_SKY
+		env.sky = sky
+
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+		env.ambient_light_energy = 0.85
+		env.tonemap_mode = Environment.TONE_MAPPER_ACES
 		env.fog_enabled = true
-		env.fog_light_color = Color("#b8d8e8")
-		env.fog_density = 0.003
+		env.fog_light_color = Color(0.70, 0.82, 0.88, 1.0)
+		env.fog_density = 0.002
 		env_node.environment = env
 		add_child(env_node)
 
@@ -84,20 +94,65 @@ func _create_environment() -> void:
 		directional_light.rotation_degrees = Vector3(-45, -30, 0)
 
 func _create_river_bed_and_water() -> void:
-	# 1. Flowing River Water Surface
+	# 1. Flowing Realistic River Water Surface
 	var water_mesh_inst: MeshInstance3D = MeshInstance3D.new()
 	water_mesh_inst.name = "RiverWater"
 	var water_plane: PlaneMesh = PlaneMesh.new()
 	water_plane.size = Vector2(RIVER_WIDTH, RIVER_LENGTH + 200.0)
+	water_plane.subdivide_width = 16
+	water_plane.subdivide_depth = 160
 	water_mesh_inst.mesh = water_plane
 
-	var water_mat: StandardMaterial3D = StandardMaterial3D.new()
-	water_mat.albedo_color = Color(0.14, 0.48, 0.68, 0.85)
-	water_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	water_mat.roughness = 0.12
-	water_mat.metallic = 0.1
-	water_mat.metallic_specular = 0.8
-	water_mesh_inst.material_override = water_mat
+	# Apply Realistic Water Shader with Procedural Normal Maps
+	var water_shader = load("res://realistic_water.gdshader")
+	if water_shader:
+		var water_mat: ShaderMaterial = ShaderMaterial.new()
+		water_mat.shader = water_shader
+
+		# Procedural Normal Map 1
+		var n1 = FastNoiseLite.new()
+		n1.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+		n1.frequency = 0.035
+		var tex1 = NoiseTexture2D.new()
+		tex1.width = 256
+		tex1.height = 256
+		tex1.seamless = true
+		tex1.as_normal_map = true
+		tex1.bump_strength = 2.5
+		tex1.noise = n1
+		water_mat.set_shader_parameter("texture_normal1", tex1)
+
+		# Procedural Normal Map 2
+		var n2 = FastNoiseLite.new()
+		n2.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+		n2.frequency = 0.05
+		var tex2 = NoiseTexture2D.new()
+		tex2.width = 256
+		tex2.height = 256
+		tex2.seamless = true
+		tex2.as_normal_map = true
+		tex2.bump_strength = 2.0
+		tex2.noise = n2
+		water_mat.set_shader_parameter("texture_normal2", tex2)
+
+		water_mat.set_shader_parameter("shallow_color", Color(0.22, 0.65, 0.76, 0.65))
+		water_mat.set_shader_parameter("deep_color", Color(0.04, 0.22, 0.36, 0.94))
+		water_mat.set_shader_parameter("foam_color", Color(0.92, 0.96, 1.0, 1.0))
+		water_mat.set_shader_parameter("wave_speed1", Vector2(0.015, 0.08))
+		water_mat.set_shader_parameter("wave_speed2", Vector2(-0.02, 0.05))
+		water_mat.set_shader_parameter("wave_scale", 0.06)
+		water_mat.set_shader_parameter("wave_strength", 0.4)
+		water_mat.set_shader_parameter("depth_distance", 2.5)
+		water_mat.set_shader_parameter("foam_distance", 0.35)
+		water_mat.set_shader_parameter("fresnel_power", 3.5)
+
+		water_mesh_inst.material_override = water_mat
+	else:
+		var water_mat: StandardMaterial3D = StandardMaterial3D.new()
+		water_mat.albedo_color = Color(0.14, 0.48, 0.68, 0.85)
+		water_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		water_mesh_inst.material_override = water_mat
+
 	water_mesh_inst.position = Vector3(0.0, 0.0, -(RIVER_LENGTH / 2.0))
 	add_child(water_mesh_inst)
 
