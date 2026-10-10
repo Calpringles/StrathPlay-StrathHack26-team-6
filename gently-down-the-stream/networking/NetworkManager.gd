@@ -42,6 +42,10 @@ func get_local_ip() -> String:
 	for address in IP.get_local_addresses():
 		if address.contains(":") or address == "127.0.0.1" or address.begins_with("169.254."):
 			continue
+		# Common VirtualBox/VM host-only networks. These addresses are not
+		# reachable by another computer on the household Wi-Fi.
+		if address.begins_with("192.168.56.") or address.begins_with("192.168.99."):
+			continue
 		if address.begins_with("192.168."):
 			return address
 		if address.begins_with("10."):
