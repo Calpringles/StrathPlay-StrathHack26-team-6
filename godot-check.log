@@ -11,10 +11,139 @@ ERROR: Failed to read the root certificate store.
 [  83% ] first_scan_filesystem | Starting file scan...
 [ DONE ] first_scan_filesystem
 
-WARNING: UID duplicate detected between res://SourceCode/shader/util/triplanar.gdshaderinc and res://Game-Assets/Skybox-assets/shader/util/triplanar.gdshaderinc.
-   at: _process_file_system (editor/file_system/editor_file_system.cpp:1405)
-WARNING: UID duplicate detected between res://SourceCode/shader/main.gdshader and res://Game-Assets/Skybox-assets/shader/main.gdshader.
-   at: _process_file_system (editor/file_system/editor_file_system.cpp:1405)
+[   0% ] update_scripts_classes | Started Registering global classes... (13 steps)
+[   0% ] update_scripts_classes | 
+[   7% ] update_scripts_classes | 
+[  14% ] update_scripts_classes | 
+[  21% ] update_scripts_classes | 
+[  28% ] update_scripts_classes | CharacterCustomizer
+[  35% ] update_scripts_classes | 
+[  42% ] update_scripts_classes | 
+[  50% ] update_scripts_classes | 
+[  57% ] update_scripts_classes | 
+[  64% ] update_scripts_classes | 
+[  71% ] update_scripts_classes | 
+[  78% ] update_scripts_classes | 
+[  85% ] update_scripts_classes | 
+[ DONE ] update_scripts_classes
+
+[   0% ] _update_scan_actions | Started Scanning actions... (114 steps)
+[   0% ] _update_scan_actions | strathhack for banner.webp
+[   0% ] _update_scan_actions | Paddle.fbx
+[   1% ] _update_scan_actions | PolyPackBoats.png
+[   2% ] _update_scan_actions | Wood_BoatV1.fbx
+[   3% ] _update_scan_actions | Bush_1_A_Color1.fbx
+[   4% ] _update_scan_actions | Bush_1_B_Color1.fbx
+[   5% ] _update_scan_actions | Bush_1_C_Color1.fbx
+[   6% ] _update_scan_actions | Bush_1_D_Color1.fbx
+[   6% ] _update_scan_actions | Bush_1_E_Color1.fbx
+[   7% ] _update_scan_actions | Bush_1_F_Color1.fbx
+[   8% ] _update_scan_actions | Bush_1_G_Color1.fbx
+[   9% ] _update_scan_actions | Bush_2_A_Color1.fbx
+[  10% ] _update_scan_actions | Bush_2_B_Color1.fbx
+[  11% ] _update_scan_actions | Bush_2_C_Color1.fbx
+[  12% ] _update_scan_actions | Bush_2_D_Color1.fbx
+[  13% ] _update_scan_actions | Bush_2_E_Color1.fbx
+[  13% ] _update_scan_actions | Bush_2_F_Color1.fbx
+[  14% ] _update_scan_actions | Bush_3_A_Color1.fbx
+[  15% ] _update_scan_actions | Bush_3_B_Color1.fbx
+[  16% ] _update_scan_actions | Bush_3_C_Color1.fbx
+[  17% ] _update_scan_actions | Bush_4_A_Color1.fbx
+[  18% ] _update_scan_actions | Bush_4_B_Color1.fbx
+[  19% ] _update_scan_actions | Bush_4_C_Color1.fbx
+[  20% ] _update_scan_actions | Bush_4_D_Color1.fbx
+[  20% ] _update_scan_actions | Bush_4_E_Color1.fbx
+[  21% ] _update_scan_actions | Bush_4_F_Color1.fbx
+[  22% ] _update_scan_actions | forest_texture.png
+[  23% ] _update_scan_actions | Grass_1_A_Color1.fbx
+[  24% ] _update_scan_actions | Grass_1_A_Singlesided_Color1.fbx
+[  25% ] _update_scan_actions | Grass_1_B_Color1.fbx
+[  26% ] _update_scan_actions | Grass_1_B_Singlesided_Color1.fbx
+[  26% ] _update_scan_actions | Grass_1_C_Color1.fbx
+[  27% ] _update_scan_actions | Grass_1_C_Singlesided_Color1.fbx
+[  28% ] _update_scan_actions | Grass_1_D_Color1.fbx
+[  29% ] _update_scan_actions | Grass_1_D_Singlesided_Color1.fbx
+[  30% ] _update_scan_actions | Grass_1_Mesh.fbx
+[  31% ] _update_scan_actions | Grass_1_SingleSided_Mesh.fbx
+[  32% ] _update_scan_actions | Grass_2_A_Color1.fbx
+[  33% ] _update_scan_actions | Grass_2_A_Singlesided_Color1.fbx
+[  33% ] _update_scan_actions | Grass_2_B_Color1.fbx
+[  34% ] _update_scan_actions | Grass_2_B_Singlesided_Color1.fbx
+[  35% ] _update_scan_actions | Grass_2_C_Color1.fbx
+[  36% ] _update_scan_actions | Grass_2_C_Singlesided_Color1.fbx
+[  37% ] _update_scan_actions | Grass_2_D_Color1.fbx
+[  38% ] _update_scan_actions | Grass_2_D_Singlesided_Color1.fbx
+[  39% ] _update_scan_actions | Grass_2_Mesh.fbx
+[  40% ] _update_scan_actions | Grass_2_SingleSided_Mesh.fbx
+[  40% ] _update_scan_actions | Rock_1_A_Color1.fbx
+[  41% ] _update_scan_actions | Rock_1_B_Color1.fbx
+[  42% ] _update_scan_actions | Rock_1_C_Color1.fbx
+[  43% ] _update_scan_actions | Rock_1_D_Color1.fbx
+[  44% ] _update_scan_actions | Rock_1_E_Color1.fbx
+[  45% ] _update_scan_actions | Rock_1_F_Color1.fbx
+[  46% ] _update_scan_actions | Rock_1_G_Color1.fbx
+[  46% ] _update_scan_actions | Rock_1_H_Color1.fbx
+[  47% ] _update_scan_actions | Rock_1_I_Color1.fbx
+[  48% ] _update_scan_actions | Rock_1_J_Color1.fbx
+[  49% ] _update_scan_actions | Rock_1_K_Color1.fbx
+[  50% ] _update_scan_actions | Rock_1_L_Color1.fbx
+[  51% ] _update_scan_actions | Rock_1_M_Color1.fbx
+[  52% ] _update_scan_actions | Rock_1_N_Color1.fbx
+[  53% ] _update_scan_actions | Rock_1_O_Color1.fbx
+[  53% ] _update_scan_actions | Rock_1_P_Color1.fbx
+[  54% ] _update_scan_actions | Rock_1_Q_Color1.fbx
+[  55% ] _update_scan_actions | Rock_2_A_Color1.fbx
+[  56% ] _update_scan_actions | Rock_2_B_Color1.fbx
+[  57% ] _update_scan_actions | Rock_2_C_Color1.fbx
+[  58% ] _update_scan_actions | Rock_2_D_Color1.fbx
+[  59% ] _update_scan_actions | Rock_2_E_Color1.fbx
+[  60% ] _update_scan_actions | Rock_2_F_Color1.fbx
+[  60% ] _update_scan_actions | Rock_2_G_Color1.fbx
+[  61% ] _update_scan_actions | Rock_2_H_Color1.fbx
+[  62% ] _update_scan_actions | Rock_3_A_Color1.fbx
+[  63% ] _update_scan_actions | Rock_3_B_Color1.fbx
+[  64% ] _update_scan_actions | Rock_3_C_Color1.fbx
+[  65% ] _update_scan_actions | Rock_3_D_Color1.fbx
+[  66% ] _update_scan_actions | Rock_3_E_Color1.fbx
+[  66% ] _update_scan_actions | Rock_3_F_Color1.fbx
+[  67% ] _update_scan_actions | Rock_3_G_Color1.fbx
+[  68% ] _update_scan_actions | Rock_3_H_Color1.fbx
+[  69% ] _update_scan_actions | Rock_3_I_Color1.fbx
+[  70% ] _update_scan_actions | Rock_3_J_Color1.fbx
+[  71% ] _update_scan_actions | Rock_3_K_Color1.fbx
+[  72% ] _update_scan_actions | Rock_3_L_Color1.fbx
+[  73% ] _update_scan_actions | Rock_3_M_Color1.fbx
+[  73% ] _update_scan_actions | Rock_3_N_Color1.fbx
+[  74% ] _update_scan_actions | Rock_3_O_Color1.fbx
+[  75% ] _update_scan_actions | Rock_3_P_Color1.fbx
+[  76% ] _update_scan_actions | Rock_3_Q_Color1.fbx
+[  77% ] _update_scan_actions | Rock_3_R_Color1.fbx
+[  78% ] _update_scan_actions | Tree_1_A_Color1.fbx
+[  79% ] _update_scan_actions | Tree_1_B_Color1.fbx
+[  80% ] _update_scan_actions | Tree_1_C_Color1.fbx
+[  80% ] _update_scan_actions | Tree_2_A_Color1.fbx
+[  81% ] _update_scan_actions | Tree_2_B_Color1.fbx
+[  82% ] _update_scan_actions | Tree_2_C_Color1.fbx
+[  83% ] _update_scan_actions | Tree_2_D_Color1.fbx
+[  84% ] _update_scan_actions | Tree_2_E_Color1.fbx
+[  85% ] _update_scan_actions | Tree_3_A_Color1.fbx
+[  86% ] _update_scan_actions | Tree_3_B_Color1.fbx
+[  86% ] _update_scan_actions | Tree_3_C_Color1.fbx
+[  87% ] _update_scan_actions | Tree_4_A_Color1.fbx
+[  88% ] _update_scan_actions | Tree_4_B_Color1.fbx
+[  89% ] _update_scan_actions | Tree_4_C_Color1.fbx
+[  90% ] _update_scan_actions | Tree_Bare_1_A_Color1.fbx
+[  91% ] _update_scan_actions | Tree_Bare_1_B_Color1.fbx
+[  92% ] _update_scan_actions | Tree_Bare_1_C_Color1.fbx
+[  93% ] _update_scan_actions | Tree_Bare_2_A_Color1.fbx
+[  93% ] _update_scan_actions | Tree_Bare_2_B_Color1.fbx
+[  94% ] _update_scan_actions | Tree_Bare_2_C_Color1.fbx
+[  95% ] _update_scan_actions | mat_primate_03_diffuse.jpeg
+[  96% ] _update_scan_actions | scene.gltf
+[  97% ] _update_scan_actions | icon.svg
+[  98% ] _update_scan_actions | seated-rower.glb
+[ DONE ] _update_scan_actions
+
 [   0% ] loading_editor_layout | Started Loading editor (5 steps)
 [   0% ] loading_editor_layout | Loading editor layout...
 [  16% ] loading_editor_layout | Loading docks...
