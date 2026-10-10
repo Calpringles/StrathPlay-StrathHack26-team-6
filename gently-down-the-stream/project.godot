@@ -32,6 +32,11 @@ row={
 ]
 }
 
+row_reverse={
+"deadzone": 0.2,
+"events": [Object(InputEventMouseButton,"button_index":2)]
+}
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
