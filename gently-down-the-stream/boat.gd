@@ -1,6 +1,8 @@
 # res://boat.gd
 extends CharacterBody3D
 
+signal sync_row_achieved(seat_a: int, seat_b: int)
+
 # Which seat (0 to 5) this computer controls when not in networked session.
 # Seat mapping:
 # 0 = Front-Left,  1 = Front-Right
@@ -407,6 +409,7 @@ func row_oar(index: int, is_reverse: bool = false) -> void:
 	var sync_multiplier: float = 1.0
 	if absf(current_time - last_stroke_times[opposite_idx]) <= sync_window:
 		sync_multiplier += sync_boost # Synchronized pair surge!
+		sync_row_achieved.emit(index, opposite_idx)
 
 	var thrust_dir = -1.0 if is_reverse else 1.0
 	var impulse = forward * (stroke_power * cfg.thrust_factor * sync_multiplier * thrust_dir)

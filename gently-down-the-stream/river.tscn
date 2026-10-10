@@ -3,8 +3,10 @@
 [ext_resource type="Script" uid="uid://c6fmclc4hac0c" path="res://boat.gd" id="1_gqjxk"]
 [ext_resource type="Script" uid="uid://bc6c3ucrw1mef" path="res://seats.gd" id="2_iiml5"]
 [ext_resource type="PackedScene" uid="uid://un4p8wna6dt6" path="res://boatassets/Wood_BoatV1.fbx" id="3_5iwgs"]
+[ext_resource type="Script" path="res://river.gd" id="4_river"]
 
 [node name="River" type="Node3D" unique_id=403142012]
+script = ExtResource("4_river")
 
 [node name="Boat" type="CharacterBody3D" parent="." unique_id=1578196858]
 script = ExtResource("1_gqjxk")
