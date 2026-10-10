@@ -450,11 +450,9 @@ func _handle_local_input() -> void:
 	if Input.is_action_just_pressed("row"):
 		_request_stroke(local_seat, false)
 
-	# Secondary reverse stroke / backwater (Right click or "row_reverse")
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and Input.is_action_just_pressed("ui_cancel") == false:
-		# Check if right click was just pressed this frame
-		if Input.is_action_just_pressed("row_reverse") or _is_mouse_button_just_pressed(MOUSE_BUTTON_RIGHT):
-			_request_stroke(local_seat, true)
+	# Secondary reverse stroke / backwater (right click)
+	if Input.is_action_just_pressed("row_reverse") and not Input.is_action_just_pressed("ui_cancel"):
+		_request_stroke(local_seat, true)
 
 	# Single-player / offline testing shortcuts: keys 1 to 6 trigger seats 0 to 5
 	if not _is_multiplayer_active():
@@ -463,13 +461,6 @@ func _handle_local_input() -> void:
 			if Input.is_key_pressed(key_code) and Input.is_physical_key_pressed(key_code):
 				if stroke_timers[key_idx] <= 0.0:
 					_request_stroke(key_idx, false)
-
-var _prev_rmb_pressed: bool = false
-func _is_mouse_button_just_pressed(button: MouseButton) -> bool:
-	var pressed = Input.is_mouse_button_pressed(button)
-	var just_pressed = pressed and not _prev_rmb_pressed
-	_prev_rmb_pressed = pressed
-	return just_pressed
 
 func _request_stroke(seat_index: int, is_reverse: bool) -> void:
 	if seat_index < 0 or seat_index >= oars.size():
