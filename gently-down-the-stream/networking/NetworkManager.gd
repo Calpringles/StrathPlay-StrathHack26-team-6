@@ -35,18 +35,22 @@ func _ready() -> void:
 # --- IP Helper for LAN / Same Network ---
 
 func get_local_ip() -> String:
-	# Searches local network adapters for a standard private IPv4 (e.g. 192.168.x.x, 10.x.x.x)
+	# Prefer the adapter normally used for home/LAN play. Windows can return
+	# VPN, Hyper-V, Docker, and loopback adapters before the real Wi-Fi address.
+	var candidates: Array[String] = []
 	for address in IP.get_local_addresses():
-		if address.contains(":"):
-			continue # Ignore IPv6
-		if address.begins_with("192.168.") or address.begins_with("10."):
+		if address.contains(":") or address == "127.0.0.1" or address.begins_with("169.254."):
+			continue
+		if address.begins_with("192.168."):
 			return address
-		if address.begins_with("172."):
+		if address.begins_with("10."):
+			candidates.push_front(address)
+		elif address.begins_with("172."):
 			var parts = address.split(".")
-			if parts.size() > 1:
-				var second_octet = parts[1].to_int()
-				if second_octet >= 16 and second_octet <= 31:
-					return address
+			if parts.size() > 1 and parts[1].to_int() >= 16 and parts[1].to_int() <= 31:
+				candidates.append(address)
+	if not candidates.is_empty():
+		return candidates[0]
 	return "127.0.0.1"
 
 # --- Hosting & Joining ---
@@ -113,6 +117,7 @@ func _on_connected_to_server() -> void:
 func _on_connection_failed() -> void:
 	print("Failed to connect to host.")
 	multiplayer.multiplayer_peer = null
+	peer = null
 	connection_failed.emit()
 
 func _on_server_disconnected() -> void:

@@ -283,6 +283,9 @@ func _on_leave_pressed() -> void:
 	connect_status_label.text = "Disconnected."
 
 func _on_connection_failed() -> void:
+	connect_panel.visible = true
+	room_panel.visible = false
+	connect_status_label.text = "Could not connect. Check the host IP and Windows Firewall."
 	connect_status_label.text = "Failed to connect to host. Check IP & port."
 	room_panel.visible = false
 	connect_panel.visible = true
