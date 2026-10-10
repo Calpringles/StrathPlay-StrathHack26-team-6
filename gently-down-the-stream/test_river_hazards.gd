@@ -22,7 +22,21 @@ func _run() -> void:
 	assert(not hazards.whirlpools[0].position.is_equal_approx(whirl_start), "Whirlpools must move")
 	wildlife.clock = 0.0
 	hazards.update_whirlpools()
-	assert(hazards.get_node_or_null("FinaleBuoy0_-1") != null, "Finale must mark alternate rock gaps")
+	assert(hazards.get_node_or_null("FinaleBuoy0_-1") == null, "Finale must have no yellow buoys")
+	var corridor_rocks = 0
+	var rock_assets = {}
+	for obstacle in river.get_node("Obstacles").get_children():
+		if obstacle.has_meta("corridor_centre"):
+			corridor_rocks += 1
+			var inner_edge = absf(obstacle.position.x - float(obstacle.get_meta("corridor_centre"))) - float(obstacle.get_meta("rock_width")) / 2.0
+			assert(inner_edge >= 4.19, "Rock walls must leave eight metres of clear water")
+			rock_assets[obstacle.get_meta("rock_asset")] = true
+			var visible_bounds: AABB = wildlife._mesh_bounds(obstacle.get_child(0))
+			assert(visible_bounds.size.x <= float(obstacle.get_meta("rock_width")) + 0.01, "Visible rock must fit the clear passage")
+	assert(corridor_rocks >= 90, "Finale must have rocks along both sides of the passage")
+	assert(rock_assets.size() >= 5, "Finale must use varied scenery models")
+	river._create_finish_firework(1)
+	assert(river.get_node("FinishFirework").emitting, "Finish celebration must emit fireworks")
 	river._show_notification("Test warning", Color.RED, 2.0)
 	assert(not river.notification_banner.visible, "Gameplay text warnings must stay hidden")
 	var environment = river.get_node("WorldEnvironment").environment

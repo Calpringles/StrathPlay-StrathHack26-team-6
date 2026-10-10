@@ -55,6 +55,7 @@ func _ready() -> void:
 	_create_environment()
 	_create_river_bed_and_water()
 	_create_river_banks()
+	_create_mountain_backdrop()
 	_generate_obstacles()
 	_decorate_banks()
 	if preview_mode:
@@ -75,7 +76,9 @@ func _ready() -> void:
 	hazards.name = "RiverHazards"
 	hazards.set_script(load("res://river_hazards.gd"))
 	add_child(hazards)
-	NetworkManager.call_deferred("notify_game_loaded")
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null:
+		network_manager.call_deferred("notify_game_loaded")
 
 	# Connect boat sync and damage events
 	if boat.has_signal("sync_row_achieved"):
@@ -138,6 +141,49 @@ func _create_environment() -> void:
 		directional_light.light_energy = 0.65
 		directional_light.shadow_enabled = true
 		directional_light.rotation_degrees = Vector3(-45, -30, 0)
+
+func _create_mountain_backdrop() -> void:
+	var mountains = Node3D.new()
+	mountains.name = "MountainBackdrop"
+	add_child(mountains)
+	var random = RandomNumberGenerator.new()
+	random.seed = 91735
+	var material = StandardMaterial3D.new()
+	material.vertex_color_use_as_albedo = true
+	material.roughness = 1.0
+	for side in [-1, 1]:
+		for layer in range(2):
+			for index in range(16):
+				var height = random.randf_range(22, 38) if layer == 0 else random.randf_range(38, 64)
+				var radius = random.randf_range(28, 42) if layer == 0 else random.randf_range(45, 65)
+				var surface = SurfaceTool.new()
+				surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+				var rings: Array = []
+				for tier in range(4):
+					var ring: Array[Vector3] = []
+					var tier_radius = [1.0, 0.52, 0.2, 0.0][tier]
+					var tier_height = [0.0, 0.5, 0.82, 1.0][tier]
+					for point in range(10):
+						var angle = TAU * point / 10.0
+						var width = radius * tier_radius * random.randf_range(0.85, 1.15)
+						ring.append(Vector3(cos(angle) * width + tier * 1.5, height * tier_height, sin(angle) * width))
+					rings.append(ring)
+				for tier in range(3):
+					for point in range(10):
+						var next = (point + 1) % 10
+						var faces = [[rings[tier][point], rings[tier + 1][point], rings[tier][next]], [rings[tier][next], rings[tier + 1][point], rings[tier + 1][next]]]
+						for face in faces:
+							for vertex in face:
+								var lower_color = Color("#587754") if layer == 0 else Color("#607d87")
+								var upper_color = Color("#8c9690") if layer == 0 else Color("#c4ccc7")
+								surface.set_color(lower_color.lerp(upper_color, vertex.y / height))
+								surface.add_vertex(vertex)
+				surface.generate_normals()
+				var mountain = MeshInstance3D.new()
+				mountain.mesh = surface.commit()
+				mountain.material_override = material
+				mountain.position = Vector3(side * random.randf_range(70 + layer * 70, 85 + layer * 70), 0.0, 130.0 - index * 90.0 + random.randf_range(-15, 15))
+				mountains.add_child(mountain)
 
 func _create_river_bed_and_water() -> void:
 	# 1. Flowing Realistic River Water Surface
@@ -627,7 +673,7 @@ func _create_finish_line() -> void:
 	wood_mat.albedo_color = Color("#8b5a2b")
 
 	var banner_mat: StandardMaterial3D = StandardMaterial3D.new()
-	banner_mat.albedo_color = Color("#ffd700") # Gold celebratory banner
+	banner_mat.albedo_color = Color("#176b70")
 
 	# Archway Pillars
 	for side in [-1.0, 1.0]:
@@ -658,6 +704,15 @@ func _create_finish_line() -> void:
 	banner.material_override = banner_mat
 	banner.position = Vector3(0.0, 5.8, 0.0)
 	finish_node.add_child(banner)
+	var trim = MeshInstance3D.new()
+	var trim_mesh = BoxMesh.new()
+	trim_mesh.size = Vector3(15.5, 2.4, 0.08)
+	trim.mesh = trim_mesh
+	var trim_material = StandardMaterial3D.new()
+	trim_material.albedo_color = Color("#e8bf72")
+	trim.material_override = trim_material
+	trim.position = Vector3(0, 5.8, -0.08)
+	finish_node.add_child(trim)
 
 	# 3D Label
 	var finish_lbl: Label3D = Label3D.new()
@@ -665,10 +720,10 @@ func _create_finish_line() -> void:
 	finish_lbl.font_size = 96
 	finish_lbl.pixel_size = 0.008
 	var bold_font = SystemFont.new()
-	bold_font.font_names = PackedStringArray(["Arial", "Noto Sans"])
+	bold_font.font_names = PackedStringArray(["Georgia", "DejaVu Serif"])
 	bold_font.font_weight = 800
 	finish_lbl.font = bold_font
-	finish_lbl.modulate = Color(0.1, 0.1, 0.1)
+	finish_lbl.modulate = Color("#fff1cc")
 	finish_lbl.position = Vector3(0.0, 5.8, 0.08)
 	finish_node.add_child(finish_lbl)
 
@@ -917,7 +972,7 @@ func _create_hud() -> void:
 	vic_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vic_title.add_theme_font_size_override("font_size", 54)
 	var bold_font = SystemFont.new()
-	bold_font.font_names = PackedStringArray(["Arial", "Noto Sans"])
+	bold_font.font_names = PackedStringArray(["Georgia", "DejaVu Serif"])
 	bold_font.font_weight = 800
 	vic_title.add_theme_font_override("font", bold_font)
 	vic_title.add_theme_color_override("font_outline_color", Color(0.2, 0.1, 0.0))
@@ -1044,8 +1099,9 @@ func _apply_damage(amount: float, reason: String) -> void:
 	# The host owns physics and damage. Mirror the resulting state so every
 	# player sees the flash, notification, hull value, and game-over panel at
 	# the same time.
-	if multiplayer != null and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
-		for id in NetworkManager.get_loaded_game_peers():
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null and multiplayer != null and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		for id in network_manager.get_loaded_game_peers():
 			_sync_damage.rpc_id(id, new_health, amount, reason)
 
 func _apply_damage_state(new_health: float, amount: float, reason: String) -> void:
@@ -1070,7 +1126,8 @@ func _sync_damage(new_health: float, amount: float, reason: String) -> void:
 	_apply_damage_state(new_health, amount, reason)
 
 func _is_game_authority() -> bool:
-	return not NetworkManager.is_connection_ready() or multiplayer.is_server()
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	return network_manager == null or not network_manager.is_connection_ready() or (multiplayer != null and multiplayer.is_server())
 
 func _on_boat_sync_row(_seat_a: int, _seat_b: int) -> void:
 	sync_combos += 1
@@ -1105,7 +1162,9 @@ func _receive_initial_state(state: Dictionary) -> void:
 	get_node("RiverWildlife")._sync_game_state(state.clock, state.health, state.state, state.crocodiles, state.ending_time, state.ending_x, state.trees)
 	get_node("RiverHazards").update_trees(false)
 	_update_hud(0.0)
-	NetworkManager.local_game_loaded = true
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null:
+		network_manager.local_game_loaded = true
 
 func _update_hud(_delta: float) -> void:
 	if distance_bar != null:
@@ -1156,12 +1215,15 @@ func _trigger_victory() -> void:
 		boat.velocity = Vector3.ZERO
 	# Detach the camera so the boat can tumble without rolling the view.
 	camera.set_as_top_level(true)
-	camera.global_position = Vector3(16, 10, WATERFALL_Z + 15)
-	camera.look_at(Vector3(0, -5, WATERFALL_Z - 5), Vector3.UP)
+	camera.global_position = Vector3(20, 7, WATERFALL_Z + 12)
+	camera.look_at(Vector3(0, -8, WATERFALL_Z - 5), Vector3.UP)
 	cam_base_pos = camera.position
 
 func _update_victory_ending(delta: float) -> void:
+	var previous_burst = int(victory_elapsed / 0.8)
 	victory_elapsed += delta
+	if victory_elapsed < 12.0 and int(victory_elapsed / 0.8) > previous_burst:
+		_create_finish_firework(int(victory_elapsed / 0.8))
 	var travel = minf(victory_elapsed * 6.0, 44.0)
 	boat.position.x = lerpf(victory_start_x, 0.0, clampf(victory_elapsed / 3.0, 0.0, 1.0))
 	boat.position.z = -RIVER_LENGTH - travel
@@ -1169,6 +1231,41 @@ func _update_victory_ending(delta: float) -> void:
 	boat.position.y = maxf(-17.8, 0.2 - 3.5 * fall_time * fall_time)
 	boat.rotation.x = lerpf(boat.rotation.x, deg_to_rad(-65.0) if boat.position.y > -17.7 and fall_time > 0.0 else 0.0, minf(1.0, delta * 3.0))
 	boat.rotation.y = lerp_angle(boat.rotation.y, 0.0, minf(1.0, delta * 2.0))
+
+func _create_finish_firework(index: int) -> void:
+	var burst = CPUParticles3D.new()
+	burst.name = "FinishFirework"
+	burst.position = Vector3(-7.0 if index % 2 == 0 else 7.0, 8.0 + (index % 3) * 2.0, WATERFALL_Z - 4.0 - (index % 4) * 3.0)
+	burst.amount = 85
+	burst.lifetime = 2.2
+	burst.one_shot = true
+	burst.explosiveness = 1.0
+	burst.spread = 180.0
+	burst.initial_velocity_min = 3.5
+	burst.initial_velocity_max = 6.5
+	burst.gravity = Vector3(0, -2.4, 0)
+	burst.scale_amount_min = 0.07
+	burst.scale_amount_max = 0.13
+	var spark = SphereMesh.new()
+	spark.radius = 1.0
+	spark.height = 2.0
+	spark.radial_segments = 6
+	spark.rings = 3
+	var material = StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.vertex_color_use_as_albedo = true
+	spark.material = material
+	burst.mesh = spark
+	var colors = [Color("#ffba52"), Color("#74e8ed"), Color("#ff83bd"), Color("#b9a0ff")]
+	var gradient = Gradient.new()
+	var color: Color = colors[index % colors.size()]
+	gradient.set_color(0, color)
+	gradient.set_color(1, Color(color.r, color.g, color.b, 0.0))
+	burst.color_ramp = gradient
+	add_child(burst)
+	burst.emitting = true
+	burst.finished.connect(burst.queue_free)
 
 func _create_waterfall() -> void:
 	var falls = MeshInstance3D.new()
@@ -1184,6 +1281,15 @@ func _create_waterfall() -> void:
 	waterfall_material.shader = load("res://waterfall.gdshader")
 	falls.material_override = waterfall_material
 	add_child(falls)
+	var crest = MeshInstance3D.new()
+	crest.name = "WaterfallCrest"
+	var crest_mesh = PlaneMesh.new()
+	crest_mesh.size = Vector2(RIVER_WIDTH, 3.0)
+	crest_mesh.subdivide_width = 32
+	crest.mesh = crest_mesh
+	crest.material_override = waterfall_material
+	crest.position = Vector3(0, 0.1, WATERFALL_Z + 1.5)
+	add_child(crest)
 	var pool = MeshInstance3D.new()
 	pool.name = "WaterfallPool"
 	var pool_mesh = PlaneMesh.new()
@@ -1224,8 +1330,8 @@ func _create_waterfall_rainbow() -> void:
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var colors = [Color(1, 0.18, 0.15, 0.55), Color(1, 0.52, 0.1, 0.55), Color(1, 0.9, 0.16, 0.55), Color(0.25, 0.88, 0.38, 0.55), Color(0.15, 0.65, 1, 0.55), Color(0.35, 0.3, 0.9, 0.55), Color(0.72, 0.3, 0.9, 0.55)]
 	for band in range(colors.size()):
-		var outer = 12.0 - band * 0.3
-		var inner = outer - 0.3
+		var outer = 18.0 - band * 0.5
+		var inner = outer - 0.5
 		for segment in range(64):
 			var a = PI * segment / 64.0
 			var b = PI * (segment + 1) / 64.0
@@ -1241,21 +1347,21 @@ func _create_waterfall_rainbow() -> void:
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	rainbow.material_override = material
-	rainbow.position = Vector3(0, -16.5, WATERFALL_Z - 8)
+	rainbow.position = Vector3(0, 0.8, -RIVER_LENGTH + 8.0)
 	add_child(rainbow)
 
 func _create_waterfall_spray() -> void:
 	var mist = CPUParticles3D.new()
 	mist.name = "WaterfallMist"
 	mist.position = Vector3(0, -17, WATERFALL_Z - 1.5)
-	mist.amount = 100
-	mist.lifetime = 2.5
+	mist.amount = 150
+	mist.lifetime = 3.5
 	mist.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
 	mist.emission_box_extents = Vector3(8, 0.25, 1.5)
 	mist.direction = Vector3(0, 1, -0.2)
 	mist.spread = 35
-	mist.initial_velocity_min = 1.5
-	mist.initial_velocity_max = 3.0
+	mist.initial_velocity_min = 2.5
+	mist.initial_velocity_max = 4.5
 	mist.gravity = Vector3(0, -0.5, 0)
 	var puff = QuadMesh.new()
 	puff.size = Vector2(1.5, 1.5)
@@ -1268,10 +1374,18 @@ func _create_waterfall_spray() -> void:
 	fade.set_color(1, Color(1, 1, 1, 0))
 	mist.color_ramp = fade
 	add_child(mist)
+	var lip_mist: CPUParticles3D = mist.duplicate()
+	lip_mist.name = "WaterfallLipMist"
+	lip_mist.position = Vector3(0, 0.5, WATERFALL_Z - 0.5)
+	lip_mist.amount = 35
+	lip_mist.lifetime = 2.0
+	lip_mist.initial_velocity_min = 0.5
+	lip_mist.initial_velocity_max = 1.0
+	add_child(lip_mist)
 	var spray = CPUParticles3D.new()
 	spray.name = "WaterfallSpray"
 	spray.position = Vector3(0, -0.25, WATERFALL_Z - 0.25)
-	spray.amount = 140
+	spray.amount = 180
 	spray.lifetime = 2.0
 	spray.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
 	spray.emission_box_extents = Vector3(8.5, 0.15, 0.15)
@@ -1292,15 +1406,18 @@ func _create_waterfall_spray() -> void:
 func _on_retry_pressed() -> void:
 	if not _is_game_authority():
 		return
-	if NetworkManager.is_connection_ready():
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null and network_manager.is_connection_ready():
 		_restart_river.rpc()
 	else:
 		_restart_river()
 
 @rpc("authority", "call_local", "reliable")
 func _restart_river() -> void:
-	NetworkManager.loaded_game_peers.clear()
-	NetworkManager.local_game_loaded = false
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null:
+		network_manager.loaded_game_peers.clear()
+		network_manager.local_game_loaded = false
 	get_tree().reload_current_scene()
 
 func _on_return_to_lobby_pressed() -> void:

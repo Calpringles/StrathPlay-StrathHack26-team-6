@@ -23,6 +23,7 @@ func _ready() -> void:
 	_create_whirlpools()
 	_clear_tree_lanes()
 	_create_finale()
+	_create_approach_debris()
 	_create_leaks()
 	_create_jumping_fish()
 
@@ -67,7 +68,7 @@ func _create_trees() -> void:
 		var side = 1.0 if i % 2 == 0 else -1.0
 		tree.position = Vector3(side * 9.4, 0.15, -70.0 - i * 80.0)
 		if i >= 9:
-			tree.position.z = [-760.0, -910.0, -955.0][i - 9]
+			tree.position.z = [-755.0, -925.0, -960.0][i - 9]
 		tree.set_meta("side", side)
 		tree.set_meta("triggered_at", -1.0)
 		tree.set_meta("hit", false)
@@ -158,7 +159,7 @@ func _create_whirlpools() -> void:
 		var whirl = _add_mesh_instance(self, plane, Vector3(direction * 4.3, 0.055, -115.0 - i * 100.0), material)
 		whirl.name = "Whirlpool%d" % i
 		if i >= 7:
-			whirl.position = Vector3(0, 0.055, -860.0 - (i - 7) * 35.0)
+			whirl.position = Vector3(0, 0.055, -910.0 - (i - 7) * 35.0)
 		whirl.set_meta("base_position", whirl.position)
 		whirl.set_meta("phase", i * 1.7)
 		whirl.set_meta("direction", direction)
@@ -175,18 +176,75 @@ func update_whirlpools() -> void:
 
 func _create_finale() -> void:
 	var obstacles = river.get_node("Obstacles")
-	var rock_material = _material(Color(0.35, 0.4, 0.39))
-	var buoy_material = _material(Color(1, 0.72, 0.18))
-	for row in range(2):
-		var z = -790.0 - row * 35.0
-		var gap_x = -3.2 if row == 0 else 3.2
-		for x in [-6.3, -2.1, 2.1, 6.3]:
-			if absf(x - gap_x) > 2.4:
-				river._spawn_rock(obstacles, Vector3(x, 0.2, z), 1.15, rock_material)
-		# Bright floating buoys mark the open lane without warning text.
+	var rng = RandomNumberGenerator.new()
+	rng.seed = 4817
+	# Both walls follow three sweeping bends with the same clear gap.
+	for row in range(32):
+		var progress = float(row) / 31.0
+		var z = -780.0 - progress * 110.0
+		var centre_x = sin(progress * TAU * 1.5) * 3.8
 		for side in [-1, 1]:
-			var buoy = _add_mesh_instance(self, _create_sphere_mesh(0.25), Vector3(gap_x + side * 2.1, 0.2, z + 3), buoy_material)
-			buoy.name = "FinaleBuoy%d_%d" % [row, side]
+			for layer in range(2):
+				var width = rng.randf_range(1.7, 2.7)
+				var x = centre_x + side * (4.2 + width / 2.0 + layer * 2.3)
+				var rock = _create_scenery_rock(obstacles, Vector3(x, -0.25, z + rng.randf_range(-0.3, 0.3)), Vector3(width, rng.randf_range(1.2, 3.6), rng.randf_range(2.4, 3.8)), rng)
+				rock.set_meta("corridor_centre", centre_x)
+				rock.set_meta("rock_width", width)
+
+func _create_scenery_rock(parent: Node3D, position: Vector3, size: Vector3, rng: RandomNumberGenerator) -> StaticBody3D:
+	var assets = ["Rock_1_A", "Rock_1_D", "Rock_2_B", "Rock_2_F", "Rock_3_C", "Rock_3_H", "Rock_3_N"]
+	var asset: String = assets[rng.randi_range(0, assets.size() - 1)]
+	var scene: PackedScene = load("res://Game-Assets/GameWorld-Assets/fbx/" + asset + "_Color1.fbx")
+	var rock = StaticBody3D.new()
+	rock.name = "RockScenery"
+	rock.position = position
+	rock.add_to_group("river_damage_obstacle")
+	rock.set_meta("rock_asset", asset)
+	parent.add_child(rock)
+	var model: Node3D = scene.instantiate()
+	rock.add_child(model)
+	model.rotation.y = rng.randf_range(0.0, TAU)
+	var bounds: AABB = wildlife._mesh_bounds(model)
+	# Scale the rotated model in a wrapper so the visible rock fits its collision.
+	var wrapper = Node3D.new()
+	rock.add_child(wrapper)
+	model.reparent(wrapper)
+	wrapper.scale = size / bounds.size
+	model.position -= Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
+	var collider = CollisionShape3D.new()
+	var shape = BoxShape3D.new()
+	shape.size = size
+	collider.shape = shape
+	collider.position.y = size.y / 2.0
+	rock.add_child(collider)
+	return rock
+
+func _create_approach_debris() -> void:
+	var rng = RandomNumberGenerator.new()
+	rng.seed = 7193
+	var obstacles = river.get_node("Obstacles")
+	var wood = _material(Color(0.32, 0.19, 0.09))
+	for i in range(16):
+		var z = -520.0 - i * 15.0
+		# Leave space around falling trees and alternate the open side.
+		var near_tree = false
+		for tree in trees:
+			if absf(tree.position.z - z) < 10.0:
+				near_tree = true
+		if near_tree:
+			continue
+		var side = 1.0 if i % 2 == 0 else -1.0
+		_create_scenery_rock(obstacles, Vector3(side * rng.randf_range(4.8, 7.4), -0.25, z), Vector3(rng.randf_range(1.3, 2.3), rng.randf_range(0.9, 2.2), rng.randf_range(1.6, 2.8)), rng)
+		if i % 3 == 0:
+			river._spawn_log(obstacles, Vector3(-side * 5.7, 0.05, z - 6.0), 2.6, wood)
+			var branch: Node3D = obstacles.get_child(obstacles.get_child_count() - 1)
+			branch.rotation.y = rng.randf_range(-0.9, 0.9)
+			var twig = CylinderMesh.new()
+			twig.top_radius = 0.04
+			twig.bottom_radius = 0.12
+			twig.height = 1.4
+			var fork = _add_mesh_instance(branch, twig, Vector3(0.3, 0.08, 0.4), wood)
+			fork.rotation = Vector3(0.9, 0, -0.8)
 
 func get_turbulence_at(position: Vector3) -> float:
 	var intensity = 0.0
