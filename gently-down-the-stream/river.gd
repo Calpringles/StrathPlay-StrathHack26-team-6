@@ -48,6 +48,7 @@ func _ready() -> void:
 	_create_river_bed_and_water()
 	_create_river_banks()
 	_generate_obstacles()
+	_decorate_banks()
 	_create_finish_line()
 	_create_hud()
 
@@ -170,34 +171,308 @@ func _create_river_bed_and_water() -> void:
 	bed_mesh_inst.position = Vector3(0.0, -1.8, -(RIVER_LENGTH / 2.0))
 	add_child(bed_mesh_inst)
 
+# Mathematical terrain height function so trees, props, and ground mesh share the EXACT same elevation
+func get_ground_height(x: float, z: float) -> float:
+	var dist_from_river = absf(x) - (RIVER_WIDTH / 2.0)
+	if dist_from_river <= 0.0:
+		return 0.0 # River channel stays level with water surface
+
+	# The surrounding banks are intentionally one continuous, flat grass plane.
+	# Keeping this function shared means every decoration is placed on exactly
+	# the same level as the terrain mesh.
+	return 0.12
+
 func _create_river_banks() -> void:
-	# Left and Right canyon banks with colliders
 	var bank_mat: StandardMaterial3D = StandardMaterial3D.new()
-	bank_mat.albedo_color = Color("#3e4a36") # Rocky mossy cliffs
-	bank_mat.roughness = 0.9
+	bank_mat.albedo_color = Color("#42732e") # Lush green grassy landscape
+	bank_mat.roughness = 0.88
 
 	var bank_half_x: float = RIVER_WIDTH / 2.0 # 9.0
-	var bank_thickness: float = 6.0
-	var bank_height: float = 4.0
+	const TERRAIN_WIDTH: float = 250.0          # 250m of flat grassland on each side
+	const TERRAIN_X_STEPS: int = 8
+	const TERRAIN_Z_STEPS: int = 80
+	var z_total_len: float = RIVER_LENGTH + 300.0
 
+	# 1. Low shoreline collision boundary so the boat physically stays contained in the river
+	var bank_thickness: float = 4.0
+	var bank_height: float = 0.8
 	for side in [-1.0, 1.0]:
 		var bank_body: StaticBody3D = StaticBody3D.new()
-		bank_body.name = "Bank_Left" if side < 0 else "Bank_Right"
-		bank_body.position = Vector3(side * (bank_half_x + bank_thickness / 2.0), bank_height / 2.0 - 0.5, -(RIVER_LENGTH / 2.0))
+		bank_body.name = "Bank_Collider_Left" if side < 0 else "Bank_Collider_Right"
+		bank_body.position = Vector3(side * (bank_half_x + bank_thickness / 2.0), 0.0, -(RIVER_LENGTH / 2.0))
 		add_child(bank_body)
 
 		var col: CollisionShape3D = CollisionShape3D.new()
 		var col_box: BoxShape3D = BoxShape3D.new()
-		col_box.size = Vector3(bank_thickness, bank_height, RIVER_LENGTH + 200.0)
+		col_box.size = Vector3(bank_thickness, bank_height, z_total_len)
 		col.shape = col_box
 		bank_body.add_child(col)
 
-		var mesh_inst: MeshInstance3D = MeshInstance3D.new()
-		var box_mesh: BoxMesh = BoxMesh.new()
-		box_mesh.size = Vector3(bank_thickness, bank_height, RIVER_LENGTH + 200.0)
-		mesh_inst.mesh = box_mesh
-		mesh_inst.material_override = bank_mat
-		bank_body.add_child(mesh_inst)
+	# 2. Procedural continuous rolling terrain meshes on Left and Right sides
+	for side in [-1.0, 1.0]:
+		var st = SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		st.set_material(bank_mat)
+
+		for zi in range(TERRAIN_Z_STEPS):
+			var z0 = 50.0 - (float(zi) / float(TERRAIN_Z_STEPS)) * z_total_len
+			var z1 = 50.0 - (float(zi + 1) / float(TERRAIN_Z_STEPS)) * z_total_len
+
+			for xi in range(TERRAIN_X_STEPS):
+				var tx0 = float(xi) / float(TERRAIN_X_STEPS)
+				var tx1 = float(xi + 1) / float(TERRAIN_X_STEPS)
+
+				var x0_dist = bank_half_x + tx0 * TERRAIN_WIDTH
+				var x1_dist = bank_half_x + tx1 * TERRAIN_WIDTH
+
+				var p0_x = side * x0_dist
+				var p1_x = side * x1_dist
+
+				var p00 = Vector3(p0_x, get_ground_height(p0_x, z0), z0)
+				var p10 = Vector3(p1_x, get_ground_height(p1_x, z0), z0)
+				var p01 = Vector3(p0_x, get_ground_height(p0_x, z1), z1)
+				var p11 = Vector3(p1_x, get_ground_height(p1_x, z1), z1)
+
+				var uv00 = Vector2(tx0, z0 * 0.05)
+				var uv10 = Vector2(tx1, z0 * 0.05)
+				var uv01 = Vector2(tx0, z1 * 0.05)
+				var uv11 = Vector2(tx1, z1 * 0.05)
+
+				if side > 0.0:
+					st.set_uv(uv00); st.add_vertex(p00)
+					st.set_uv(uv10); st.add_vertex(p10)
+					st.set_uv(uv01); st.add_vertex(p01)
+
+					st.set_uv(uv10); st.add_vertex(p10)
+					st.set_uv(uv11); st.add_vertex(p11)
+					st.set_uv(uv01); st.add_vertex(p01)
+				else:
+					st.set_uv(uv10); st.add_vertex(p10)
+					st.set_uv(uv00); st.add_vertex(p00)
+					st.set_uv(uv01); st.add_vertex(p01)
+
+					st.set_uv(uv11); st.add_vertex(p11)
+					st.set_uv(uv10); st.add_vertex(p10)
+					st.set_uv(uv01); st.add_vertex(p01)
+
+		st.generate_normals()
+		var terrain_mesh = st.commit()
+		var terrain_inst = MeshInstance3D.new()
+		terrain_inst.name = "Terrain_Left" if side < 0 else "Terrain_Right"
+		terrain_inst.mesh = terrain_mesh
+		terrain_inst.material_override = bank_mat
+		add_child(terrain_inst)
+
+		# Solid flat grass slab. This guarantees the extended bank is visible
+		# from every camera angle, including from below the one-sided terrain
+		# surface generated above.
+		var flat_ground := MeshInstance3D.new()
+		flat_ground.name = "FlatGrassPlane_Left" if side < 0 else "FlatGrassPlane_Right"
+		var flat_mesh := BoxMesh.new()
+		flat_mesh.size = Vector3(TERRAIN_WIDTH, 0.24, z_total_len)
+		flat_ground.mesh = flat_mesh
+		flat_ground.material_override = bank_mat
+		flat_ground.position = Vector3(
+			side * (bank_half_x + TERRAIN_WIDTH * 0.5),
+			0.0,
+			-(RIVER_LENGTH / 2.0)
+		)
+		add_child(flat_ground)
+
+		# Match physics to the generated terrain so props and the boat never pass
+		# through a flat invisible plane beneath the hills.
+		var terrain_body := StaticBody3D.new()
+		terrain_body.name = "TerrainCollision_Left" if side < 0 else "TerrainCollision_Right"
+		var terrain_shape := CollisionShape3D.new()
+		var concave := ConcavePolygonShape3D.new()
+		concave.set_faces(terrain_mesh.get_faces())
+		terrain_shape.shape = concave
+		terrain_body.add_child(terrain_shape)
+		add_child(terrain_body)
+
+func _settle_decoration(inst: Node3D, x: float, z: float) -> void:
+	# Asset pivots are inconsistent: some are at the feet, others at the
+	# mesh centre. Imported FBX files also contain nested transforms, so the
+	# bounds must be measured in world space rather than by local offsets.
+	var lowest := INF
+	var stack: Array[Node] = [inst]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		if node is MeshInstance3D:
+			var mesh_node := node as MeshInstance3D
+			if mesh_node.mesh != null:
+				var aabb := mesh_node.get_aabb()
+				# Test all eight corners because imported meshes may be rotated.
+				for corner in [
+					Vector3(aabb.position.x, aabb.position.y, aabb.position.z),
+					Vector3(aabb.end.x, aabb.position.y, aabb.position.z),
+					Vector3(aabb.position.x, aabb.end.y, aabb.position.z),
+					Vector3(aabb.end.x, aabb.end.y, aabb.position.z),
+					Vector3(aabb.position.x, aabb.position.y, aabb.end.z),
+					Vector3(aabb.end.x, aabb.position.y, aabb.end.z),
+					Vector3(aabb.position.x, aabb.end.y, aabb.end.z),
+					Vector3(aabb.end.x, aabb.end.y, aabb.end.z)
+				]:
+					lowest = minf(lowest, (mesh_node.global_transform * corner).y)
+		for child in node.get_children():
+			stack.append(child)
+	if lowest == INF:
+		lowest = 0.0
+	# The asset is initially placed at the terrain height. Move its lowest
+	# world-space point onto that same height, leaving a tiny safety margin.
+	inst.position.y += get_ground_height(x, z) - lowest + 0.02
+
+func _decorate_banks() -> void:
+	const ASSET_BASE = "res://Game-Assets/GameWorld-Assets/fbx/"
+	const DECO_SEED: int = 77341
+
+	# --- Asset lists by category ---
+	var tree_assets: Array[String] = [
+		"Tree_1_A_Color1.fbx", "Tree_1_B_Color1.fbx", "Tree_1_C_Color1.fbx",
+		"Tree_2_A_Color1.fbx", "Tree_2_B_Color1.fbx", "Tree_2_C_Color1.fbx",
+		"Tree_2_D_Color1.fbx", "Tree_3_A_Color1.fbx", "Tree_3_B_Color1.fbx",
+		"Tree_4_A_Color1.fbx", "Tree_4_B_Color1.fbx",
+		"Tree_Bare_1_A_Color1.fbx", "Tree_Bare_1_B_Color1.fbx",
+		"Tree_Bare_2_A_Color1.fbx", "Tree_Bare_2_B_Color1.fbx",
+	]
+	var bush_assets: Array[String] = [
+		"Bush_1_A_Color1.fbx", "Bush_1_B_Color1.fbx", "Bush_1_C_Color1.fbx",
+		"Bush_1_D_Color1.fbx", "Bush_2_A_Color1.fbx", "Bush_2_B_Color1.fbx",
+		"Bush_3_A_Color1.fbx", "Bush_3_B_Color1.fbx",
+		"Bush_4_A_Color1.fbx", "Bush_4_B_Color1.fbx",
+	]
+	var rock_assets: Array[String] = [
+		"Rock_1_A_Color1.fbx", "Rock_1_B_Color1.fbx", "Rock_1_C_Color1.fbx",
+		"Rock_1_D_Color1.fbx", "Rock_2_A_Color1.fbx", "Rock_2_B_Color1.fbx",
+		"Rock_2_C_Color1.fbx", "Rock_3_A_Color1.fbx", "Rock_3_B_Color1.fbx",
+		"Rock_3_C_Color1.fbx",
+	]
+	var grass_assets: Array[String] = [
+		"Grass_1_A_Color1.fbx", "Grass_1_B_Color1.fbx",
+		"Grass_2_A_Color1.fbx", "Grass_2_B_Color1.fbx",
+	]
+
+	# Pre-load all assets that actually exist on disk
+	var loaded: Dictionary = {}
+	for arr in [tree_assets, bush_assets, rock_assets, grass_assets]:
+		for filename in arr:
+			var path = ASSET_BASE + filename
+			if not loaded.has(filename) and ResourceLoader.exists(path):
+				loaded[filename] = load(path)
+
+	if loaded.is_empty():
+		push_warning("_decorate_banks: No GameWorld-Assets found at %s" % ASSET_BASE)
+		return
+
+	var deco_root: Node3D = Node3D.new()
+	deco_root.name = "BankDecoration"
+	add_child(deco_root)
+
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = DECO_SEED
+
+	# River half-width is 9m. Banks start just outside that.
+	# Left bank is at X < -9, Right bank is at X > 9
+	# We place decoration in rows stepping down Z (downstream = -Z)
+	const BANK_START_X: float = 10.5    # Edge of water channel
+	const BANK_NEAR_X: float = 14.0     # Close shoreline strip (bushes/grass/small rocks)
+	const BANK_MID_X: float = 22.0      # Mid-bank (main trees and rocks)
+	const BANK_FAR_X: float = 36.0      # Far hillside (tall trees)
+	const Z_START: float = 20.0         # Start decorating 20m in front of spawn
+	const Z_STEP_NEAR: float = 8.0      # Spacing for close shoreline items
+	const Z_STEP_MID: float = 14.0      # Spacing for mid-bank trees
+	const Z_STEP_FAR: float = 22.0      # Spacing for far hill trees
+
+	for side_sign in [-1.0, 1.0]:
+		var z: float = -Z_START
+
+		# --- NEAR SHORELINE: grass tufts and small rocks hugging the water ---
+		z = -Z_START
+		while z > -(RIVER_LENGTH - 30.0):
+			var category = rng.randi_range(0, 2)
+			var asset_name: String = ""
+			if category == 0:
+				# Grass tuft
+				asset_name = grass_assets[rng.randi_range(0, grass_assets.size() - 1)]
+			elif category == 1:
+				# Small bush right at the waterline
+				asset_name = bush_assets[rng.randi_range(0, 3)]  # Bush_1 variety
+			else:
+				# Small shoreline rock
+				asset_name = rock_assets[rng.randi_range(0, rock_assets.size() - 1)]
+
+			if loaded.has(asset_name):
+				var inst: Node3D = (loaded[asset_name] as PackedScene).instantiate()
+				var x_pos = side_sign * rng.randf_range(BANK_START_X, BANK_NEAR_X)
+				var ground_y = get_ground_height(x_pos, z)
+				inst.position = Vector3(x_pos, ground_y, z)
+				inst.rotation_degrees.y = rng.randf_range(0.0, 360.0)
+				var scl = rng.randf_range(0.55, 1.0)
+				inst.scale = Vector3(scl, scl, scl)
+				deco_root.add_child(inst)
+				_settle_decoration(inst, x_pos, z)
+
+			z -= Z_STEP_NEAR + rng.randf_range(-2.0, 2.0)
+
+		# --- MID BANK: main trees, larger bushes, and boulders ---
+		z = -Z_START
+		while z > -(RIVER_LENGTH - 30.0):
+			var category = rng.randi_range(0, 3)
+			var asset_name: String = ""
+			if category == 0 or category == 1:
+				# Leafy tree (most common)
+				asset_name = tree_assets[rng.randi_range(0, tree_assets.size() - 1)]
+			elif category == 2:
+				# Dense bush cluster
+				asset_name = bush_assets[rng.randi_range(0, bush_assets.size() - 1)]
+			else:
+				# Mid-size boulder
+				asset_name = rock_assets[rng.randi_range(0, rock_assets.size() - 1)]
+
+			if loaded.has(asset_name):
+				var inst: Node3D = (loaded[asset_name] as PackedScene).instantiate()
+				var x_pos = side_sign * rng.randf_range(BANK_NEAR_X, BANK_MID_X)
+				var ground_y = get_ground_height(x_pos, z)
+				inst.position = Vector3(x_pos, ground_y, z)
+				inst.rotation_degrees.y = rng.randf_range(0.0, 360.0)
+				var scl = rng.randf_range(0.9, 1.5)
+				inst.scale = Vector3(scl, scl, scl)
+				deco_root.add_child(inst)
+				_settle_decoration(inst, x_pos, z)
+
+			# Occasionally add a second tree right next to the first (tree cluster)
+			if rng.randf() < 0.35:
+				var twin_name = tree_assets[rng.randi_range(0, tree_assets.size() - 1)]
+				if loaded.has(twin_name):
+					var twin: Node3D = (loaded[twin_name] as PackedScene).instantiate()
+					var twin_z = z + rng.randf_range(-4.0, 4.0)
+					var x_twin = side_sign * rng.randf_range(BANK_NEAR_X + 2.0, BANK_MID_X + 4.0)
+					var twin_ground_y = get_ground_height(x_twin, twin_z)
+					twin.position = Vector3(x_twin, twin_ground_y, twin_z)
+					twin.rotation_degrees.y = rng.randf_range(0.0, 360.0)
+					var scl2 = rng.randf_range(0.8, 1.3)
+					twin.scale = Vector3(scl2, scl2, scl2)
+					deco_root.add_child(twin)
+					_settle_decoration(twin, x_twin, twin_z)
+
+			z -= Z_STEP_MID + rng.randf_range(-3.0, 3.0)
+
+		# --- FAR HILLSIDE: tall trees creating a dense horizon silhouette ---
+		z = -Z_START * 0.5
+		while z > -(RIVER_LENGTH - 20.0):
+			var asset_name = tree_assets[rng.randi_range(0, tree_assets.size() - 1)]
+			if loaded.has(asset_name):
+				var inst: Node3D = (loaded[asset_name] as PackedScene).instantiate()
+				var x_pos = side_sign * rng.randf_range(BANK_MID_X, BANK_FAR_X)
+				var ground_y = get_ground_height(x_pos, z)
+				inst.position = Vector3(x_pos, ground_y, z)
+				inst.rotation_degrees.y = rng.randf_range(0.0, 360.0)
+				var scl = rng.randf_range(1.4, 2.2)
+				inst.scale = Vector3(scl, scl, scl)
+				deco_root.add_child(inst)
+				_settle_decoration(inst, x_pos, z)
+
+			z -= Z_STEP_FAR + rng.randf_range(-4.0, 4.0)
 
 func _generate_obstacles() -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()

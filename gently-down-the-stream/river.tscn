@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c6fmclc4hac0c" path="res://boat.gd" id="1_gqjxk"]
 [ext_resource type="Script" uid="uid://bc6c3ucrw1mef" path="res://seats.gd" id="2_iiml5"]
 [ext_resource type="PackedScene" uid="uid://un4p8wna6dt6" path="res://Game-Assets/boatassets/Wood_BoatV1.fbx" id="3_5iwgs"]
-[ext_resource type="Script" path="res://river.gd" id="4_river"]
+[ext_resource type="Script" uid="uid://csfxa6fb7v10u" path="res://river.gd" id="4_river"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_boat"]
 size = Vector3(1.8, 0.8, 4.2)
@@ -38,7 +38,7 @@ shape = SubResource("BoxShape3D_boat")
 transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 3.5, 5.2)
 current = true
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Boat"]
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Boat" unique_id=627729761]
 replication_config = SubResource("SceneReplicationConfig_boat")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1718612270]
