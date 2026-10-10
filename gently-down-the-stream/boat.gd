@@ -13,7 +13,7 @@ signal sync_row_achieved(seat_a: int, seat_b: int)
 @export_group("Rowing Physics")
 @export var stroke_power: float = 2.4
 @export var turn_power: float = 0.45
-@export var current_speed: float = 1.6
+@export var current_speed: float = 0.0
 @export var water_drag_longitudinal: float = 0.65
 @export var water_drag_lateral: float = 3.6
 @export var turn_drag: float = 2.8
@@ -116,16 +116,18 @@ func _build_boat_visuals() -> void:
 	boat_visual_root.name = "BoatVisual"
 	add_child(boat_visual_root)
 
-	# 1. Instantiate Boat Hull from 3D model
-	var hull_node: Node3D = null
-	if ResourceLoader.exists("res://boatassets/Wood_BoatV1.fbx"):
-		var boat_scene: PackedScene = load("res://boatassets/Wood_BoatV1.fbx")
-		hull_node = boat_scene.instantiate()
-		hull_node.name = "HullMesh"
-		hull_node.rotation_degrees.y = 90.0 # Bow points along -Z
-		hull_node.scale = Vector3(1.28, 1.15, 1.52)
-		hull_node.position = Vector3(0.0, 0.0, 0.0)
-		boat_visual_root.add_child(hull_node)
+	# 1. Check if Boat Hull already exists in scene tree
+	var hull_node: Node3D = get_node_or_null("Wood_BoatV1")
+	if hull_node == null:
+		var boat_path = "res://Game-Assets/boatassets/Wood_BoatV1.fbx" if ResourceLoader.exists("res://Game-Assets/boatassets/Wood_BoatV1.fbx") else "res://boatassets/Wood_BoatV1.fbx"
+		if ResourceLoader.exists(boat_path):
+			var boat_scene: PackedScene = load(boat_path)
+			hull_node = boat_scene.instantiate()
+			hull_node.name = "HullMesh"
+			hull_node.rotation_degrees.y = 180.0 # Bow points along -Z
+			hull_node.scale = Vector3(1.28, 1.15, 1.52)
+			hull_node.position = Vector3(0.0, 0.0, 0.0)
+			boat_visual_root.add_child(hull_node)
 
 	var wood_material: StandardMaterial3D = StandardMaterial3D.new()
 	wood_material.albedo_color = Color("#5a3418")
