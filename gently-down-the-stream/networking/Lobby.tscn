@@ -225,14 +225,14 @@ horizontal_alignment = 1
 layout_mode = 2
 
 [node name="PreviewContainer" type="SubViewportContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter"]
-custom_minimum_size = Vector2(240, 160)
+custom_minimum_size = Vector2(300, 200)
 layout_mode = 2
 stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer"]
 own_world_3d = true
 handle_input_locally = false
-size = Vector2i(240, 160)
+size = Vector2i(300, 200)
 render_target_update_mode = 3
 
 [node name="Camera3D" type="Camera3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport"]
@@ -240,6 +240,27 @@ transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport"]
 transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 2, 2)
+
+[node name="RotationControls" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="RotateLeft" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls"]
+custom_minimum_size = Vector2(44, 32)
+layout_mode = 2
+tooltip_text = "Turn character left"
+text = "←"
+
+[node name="RotationLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls"]
+layout_mode = 2
+text = "Turn character"
+
+[node name="RotateRight" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls"]
+custom_minimum_size = Vector2(44, 32)
+layout_mode = 2
+tooltip_text = "Turn character right"
+text = "→"
 
 [node name="RandomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
 custom_minimum_size = Vector2(0, 34)

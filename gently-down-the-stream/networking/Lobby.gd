@@ -33,6 +33,8 @@ extends Control
 # Room Panel Customization Right Column Nodes
 @onready var preview_viewport: SubViewport = $CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport
 @onready var random_button: Button = $CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RandomButton
+@onready var rotate_left_button: Button = $CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls/RotateLeft
+@onready var rotate_right_button: Button = $CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls/RotateRight
 
 @onready var prev_eyes_btn: Button = $CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl/PrevBtn
 @onready var eyes_label: Label = $CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl/ValueLabel
@@ -103,6 +105,8 @@ func _ready() -> void:
 
 	# Customization Controls signals
 	random_button.pressed.connect(_on_randomize_pressed)
+	rotate_left_button.pressed.connect(func(): _rotate_preview(-30.0))
+	rotate_right_button.pressed.connect(func(): _rotate_preview(30.0))
 
 	prev_eyes_btn.pressed.connect(func(): _cycle_option("eyes_idx", -1, CharacterCustomizer.EYE_NAMES.size()))
 	next_eyes_btn.pressed.connect(func(): _cycle_option("eyes_idx", 1, CharacterCustomizer.EYE_NAMES.size()))
@@ -127,10 +131,9 @@ func _ready() -> void:
 
 	_update_customization_ui()
 
-func _process(delta: float) -> void:
-	# Turntable rotation of preview rower in waiting room
-	if preview_rower != null and room_panel.visible:
-		preview_rower.rotation.y += 0.5 * delta
+func _rotate_preview(degrees: float) -> void:
+	if preview_rower != null:
+		preview_rower.rotation_degrees.y += degrees
 
 func _setup_preview_rower() -> void:
 	if preview_viewport == null:
