@@ -16,13 +16,13 @@ func _ready() -> void:
 	NetworkManager.server_disconnected.connect(_on_server_disconnected)
 
 	# Setup local player HUD tag
-	var my_id = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+	var local_peer_id = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 	var player_name = "Player"
 	var seat_idx = -1
 
-	if NetworkManager.players.has(my_id):
-		player_name = NetworkManager.players[my_id].get("name", "Player")
-		seat_idx = NetworkManager.players[my_id].get("seat", -1)
+	if NetworkManager.players.has(local_peer_id):
+		player_name = NetworkManager.players[local_peer_id].get("name", "Player")
+		seat_idx = NetworkManager.players[local_peer_id].get("seat", -1)
 
 	var seat_str = SEAT_NAMES[seat_idx] if seat_idx >= 0 and seat_idx < SEAT_NAMES.size() else "Solo (Testing)"
 	player_info_label.text = "You: %s | Role: %s" % [player_name, seat_str]

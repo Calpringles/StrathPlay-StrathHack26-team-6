@@ -18,6 +18,9 @@ var local_player_name: String = "Player"
 var local_customization: Dictionary = {}
 
 var peer: ENetMultiplayerPeer
+var active_game_scene: String = ""
+var loaded_game_peers: Dictionary = {}
+var local_game_loaded: bool = false
 
 func is_connection_ready() -> bool:
 	if multiplayer == null or not multiplayer.has_multiplayer_peer():
@@ -64,12 +67,15 @@ func host_game(player_name: String, port: int = DEFAULT_PORT) -> Error:
 	local_player_name = player_name
 	peer = ENetMultiplayerPeer.new()
 	# By default, Godot binds to 0.0.0.0 (all local network interfaces)
-	var error = peer.create_server(port, MAX_PLAYERS)
+	var error = peer.create_server(port, MAX_PLAYERS - 1)
 	if error != OK:
 		print("Failed to host on port ", port, ": ", error)
 		return error
 
 	multiplayer.multiplayer_peer = peer
+	players.clear()
+	active_game_scene = ""
+	loaded_game_peers.clear()
 	# Host is always peer ID 1
 	players[1] = {
 		"name": local_player_name,
@@ -97,6 +103,9 @@ func join_game(ip_address: String, player_name: String, port: int = DEFAULT_PORT
 	return OK
 
 func disconnect_game() -> void:
+	active_game_scene = ""
+	loaded_game_peers.clear()
+	local_game_loaded = false
 	if peer:
 		peer.close()
 	multiplayer.multiplayer_peer = null
@@ -106,10 +115,12 @@ func disconnect_game() -> void:
 
 func _on_peer_connected(id: int) -> void:
 	print("Peer connected with ID: ", id)
+	player_list_updated.emit()
 
 func _on_peer_disconnected(id: int) -> void:
 	print("Peer disconnected with ID: ", id)
 	if multiplayer.is_server():
+		loaded_game_peers.erase(id)
 		players.erase(id)
 		_sync_players_to_clients.rpc(players)
 		player_disconnected.emit(id)
@@ -121,12 +132,18 @@ func _on_connected_to_server() -> void:
 	connection_ready.emit()
 
 func _on_connection_failed() -> void:
+	active_game_scene = ""
+	loaded_game_peers.clear()
+	local_game_loaded = false
 	print("Failed to connect to host.")
 	multiplayer.multiplayer_peer = null
 	peer = null
 	connection_failed.emit()
 
 func _on_server_disconnected() -> void:
+	active_game_scene = ""
+	loaded_game_peers.clear()
+	local_game_loaded = false
 	print("Host disconnected.")
 	multiplayer.multiplayer_peer = null
 	players.clear()
@@ -139,15 +156,21 @@ func _register_player(player_name: String, custom_data: Dictionary = {}) -> void
 	if not multiplayer.is_server():
 		return
 	var sender_id = multiplayer.get_remote_sender_id()
+	if sender_id <= 1 or players.has(sender_id):
+		return
 	players[sender_id] = {
 		"name": player_name,
 		"seat": -1,
 		"customization": custom_data,
 		"ready": false
 	}
+	if active_game_scene != "":
+		players[sender_id]["seat"] = find_free_seat()
 	_sync_players_to_clients.rpc(players)
 	player_connected.emit(sender_id, players[sender_id])
 	player_list_updated.emit()
+	if active_game_scene != "":
+		_load_game_scene.rpc_id(sender_id, active_game_scene)
 
 @rpc("authority", "call_local", "reliable")
 func _sync_players_to_clients(updated_players: Dictionary) -> void:
@@ -230,8 +253,51 @@ func start_game(scene_path: String) -> void:
 	# Ensure every peer has the final names, seats, and customization data
 	# before the river scene is created on each machine.
 	_sync_players_to_clients.rpc(players)
+	active_game_scene = scene_path
+	loaded_game_peers.clear()
 	_load_game_scene.rpc(scene_path)
 
 @rpc("authority", "call_local", "reliable")
 func _load_game_scene(scene_path: String) -> void:
+	active_game_scene = scene_path
+	local_game_loaded = false
 	get_tree().change_scene_to_file(scene_path)
+
+func find_free_seat() -> int:
+	for seat in range(MAX_PLAYERS):
+		var taken = false
+		for info in players.values():
+			if info.get("seat", -1) == seat:
+				taken = true
+				break
+		if not taken:
+			return seat
+	return -1
+
+func notify_game_loaded() -> void:
+	if not is_connection_ready():
+		return
+	if multiplayer.is_server():
+		local_game_loaded = true
+	else:
+		_report_game_loaded.rpc_id(1)
+
+@rpc("any_peer", "reliable")
+func _report_game_loaded() -> void:
+	if not multiplayer.is_server():
+		return
+	var sender = multiplayer.get_remote_sender_id()
+	if not players.has(sender) or sender <= 1:
+		return
+	var scene = get_tree().current_scene
+	if scene == null or scene.scene_file_path != active_game_scene or not scene.has_method("send_initial_state"):
+		return
+	scene.send_initial_state(sender)
+	loaded_game_peers[sender] = true
+
+func get_loaded_game_peers() -> Array:
+	var result: Array = []
+	for id in multiplayer.get_peers():
+		if loaded_game_peers.has(id):
+			result.append(id)
+	return result

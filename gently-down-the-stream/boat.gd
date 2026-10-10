@@ -101,6 +101,10 @@ func _find_rower_path() -> String:
 	return ""
 
 func _ready() -> void:
+	# Manual state snapshots handle late joins without scene-replication races.
+	var legacy_sync = get_node_or_null("MultiplayerSynchronizer")
+	if legacy_sync != null:
+		legacy_sync.queue_free()
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 
 	# Clean up any legacy placeholder oar nodes
@@ -129,9 +133,9 @@ func _ready() -> void:
 
 	# Listen for network roster updates if NetworkManager is active
 	if is_inside_tree():
-		var nm = get_node_or_null("/root/NetworkManager")
-		if nm != null and nm.has_signal("player_list_updated"):
-			nm.player_list_updated.connect(_update_seat_labels)
+		var network_manager = get_node_or_null("/root/NetworkManager")
+		if network_manager != null and network_manager.has_signal("player_list_updated"):
+			network_manager.player_list_updated.connect(_update_seat_labels)
 
 func _setup_collision() -> void:
 	collision_layer = 1
@@ -307,10 +311,10 @@ func _build_boat_visuals() -> void:
 	brass_mat.roughness = 0.3
 
 	for index in range(OAR_CONFIGS.size()):
-		var cfg = OAR_CONFIGS[index]
+		var oar_config = OAR_CONFIGS[index]
 		var pivot: Node3D = Node3D.new()
 		pivot.name = "Oar%d" % index
-		pivot.position = cfg.pos
+		pivot.position = oar_config.pos
 		oars_container.add_child(pivot)
 
 		# Brass Oarlock Mount
@@ -325,7 +329,7 @@ func _build_boat_visuals() -> void:
 		pivot.add_child(oarlock)
 
 		# Paddle / Oar Mesh
-		var side: float = cfg.side # -1 for left, +1 for right
+		var side: float = oar_config.side # -1 for left, +1 for right
 		var paddle_pivot_offset: Node3D = Node3D.new()
 		paddle_pivot_offset.name = "PaddleOffset"
 		pivot.add_child(paddle_pivot_offset)
@@ -367,21 +371,21 @@ func _is_server() -> bool:
 func _update_seat_labels() -> void:
 	if not is_inside_tree():
 		return
-	var nm = get_node_or_null("/root/NetworkManager")
-	var is_mp = _is_multiplayer_active() and nm != null
-	var my_id = multiplayer.get_unique_id() if is_mp else 1
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	var is_mp = _is_multiplayer_active() and network_manager != null
+	var local_peer_id = multiplayer.get_unique_id() if is_mp else 1
 
 	for s_idx in range(seat_labels.size()):
 		var occupant_name = ""
 		var is_local = false
 		var occupant_customization: Dictionary = {}
 
-		if is_mp and nm.players.size() > 0:
-			for p_id in nm.players:
-				if nm.players[p_id].get("seat", -1) == s_idx:
-					occupant_name = nm.players[p_id].get("name", "Player")
-					occupant_customization = nm.players[p_id].get("customization", {})
-					if p_id == my_id:
+		if is_mp and network_manager.players.size() > 0:
+			for p_id in network_manager.players:
+				if network_manager.players[p_id].get("seat", -1) == s_idx:
+					occupant_name = network_manager.players[p_id].get("name", "Player")
+					occupant_customization = network_manager.players[p_id].get("customization", {})
+					if p_id == local_peer_id:
 						is_local = true
 						local_seat = s_idx
 					break
@@ -406,8 +410,8 @@ func _update_seat_labels() -> void:
 			# Single-player / offline mode: show all crew rowers
 			if s_idx < rowers.size() and rowers[s_idx] != null:
 				rowers[s_idx].visible = true
-				if nm != null and nm.get("local_customization") != null and s_idx == local_seat:
-					CharacterCustomizer.apply_to_rower(rowers[s_idx], nm.local_customization)
+				if network_manager != null and network_manager.get("local_customization") != null and s_idx == local_seat:
+					CharacterCustomizer.apply_to_rower(rowers[s_idx], network_manager.local_customization)
 
 			if s_idx == local_seat:
 				seat_labels[s_idx].text = "%s\n[YOU - Space / Click to Row]" % SEAT_NAMES[s_idx]
@@ -433,12 +437,15 @@ func _physics_process(delta: float) -> void:
 	if _is_server():
 		_process_boat_physics(delta)
 		if _is_multiplayer_active() and multiplayer.is_server():
-			_sync_boat_state.rpc(global_position, rotation.y, velocity, turn_speed)
+			for id in NetworkManager.get_loaded_game_peers():
+				_sync_boat_state.rpc_id(id, global_position, rotation.y, velocity, turn_speed)
 
 	# Update visual animations (oar strokes, boat roll/pitch sway)
 	_update_visuals(delta)
 
 func _handle_local_input() -> void:
+	if _is_multiplayer_active() and not NetworkManager.local_game_loaded:
+		return
 	# Primary row action (Space or left click)
 	if Input.is_action_just_pressed("row"):
 		_request_stroke(local_seat, false)
@@ -471,7 +478,7 @@ func _request_stroke(seat_index: int, is_reverse: bool) -> void:
 	if _is_multiplayer_active():
 		if multiplayer.is_server():
 			row_oar(seat_index, is_reverse)
-			_broadcast_oar_stroke.rpc(seat_index, is_reverse)
+			_send_oar_stroke(seat_index, is_reverse)
 		else:
 			_server_request_row.rpc_id(1, seat_index, is_reverse)
 	else:
@@ -482,16 +489,22 @@ func _server_request_row(seat_index: int, is_reverse: bool) -> void:
 	if not is_inside_tree() or multiplayer == null or not multiplayer.is_server():
 		return
 	var sender_id = multiplayer.get_remote_sender_id()
+	if seat_index < 0 or seat_index >= oars.size() or not NetworkManager.loaded_game_peers.has(sender_id):
+		return
 	# Verify sender owns this seat if registered
-	var nm = get_node_or_null("/root/NetworkManager")
-	if nm != null and nm.players.has(sender_id):
-		var assigned_seat = nm.players[sender_id].get("seat", -1)
-		if assigned_seat >= 0 and assigned_seat != seat_index:
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null and network_manager.players.has(sender_id):
+		var assigned_seat = network_manager.players[sender_id].get("seat", -1)
+		if assigned_seat != seat_index:
 			return # Denied: player does not own this seat
 
 	if stroke_timers[seat_index] <= 0.0:
 		row_oar(seat_index, is_reverse)
-		_broadcast_oar_stroke.rpc(seat_index, is_reverse)
+		_send_oar_stroke(seat_index, is_reverse)
+
+func _send_oar_stroke(seat_index: int, is_reverse: bool) -> void:
+	for id in NetworkManager.get_loaded_game_peers():
+		_broadcast_oar_stroke.rpc_id(id, seat_index, is_reverse)
 
 @rpc("authority", "call_local", "unreliable")
 func _broadcast_oar_stroke(seat_index: int, is_reverse: bool) -> void:
@@ -518,9 +531,9 @@ func row_oar(index: int, is_reverse: bool = false) -> void:
 	stroke_timers[index] = stroke_duration
 	stroke_is_reverse[index] = is_reverse
 
-	var cfg = OAR_CONFIGS[index]
+	var oar_config = OAR_CONFIGS[index]
 	var forward: Vector3 = -global_transform.basis.z if is_inside_tree() else Vector3(0, 0, -1)
-	var side: float = cfg.side # -1 for left, +1 for right
+	var side: float = oar_config.side # -1 for left, +1 for right
 
 	# Check for synchronized rowing bonus across complementary oars!
 	# Complementary oar on the opposite side:
@@ -531,13 +544,13 @@ func row_oar(index: int, is_reverse: bool = false) -> void:
 		sync_row_achieved.emit(index, opposite_idx)
 
 	var thrust_dir = -1.0 if is_reverse else 1.0
-	var impulse = forward * (stroke_power * cfg.thrust_factor * sync_multiplier * thrust_dir)
+	var impulse = forward * (stroke_power * oar_config.thrust_factor * sync_multiplier * thrust_dir)
 	velocity += impulse
 
 	# Torque: Left oars turn right (-yaw in Godot), Right oars turn left (+yaw in Godot).
 	# Reverse stroke reverses the turning direction (backwatering).
 	var torque_dir = -1.0 if is_reverse else 1.0
-	turn_speed += side * turn_power * cfg.torque_factor * torque_dir
+	turn_speed += side * turn_power * oar_config.torque_factor * torque_dir
 
 func _process_boat_physics(delta: float) -> void:
 	# 1. Downstream river current

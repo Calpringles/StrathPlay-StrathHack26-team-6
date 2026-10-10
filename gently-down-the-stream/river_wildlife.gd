@@ -9,10 +9,8 @@ var boat: CharacterBody3D
 var clock: float = 0.0
 var snapshot_timer: float = 0.0
 var crocodiles: Array[Node3D] = []
-var warning_panel: VBoxContainer
 var water: MeshInstance3D
 var fish_schools: Array[Node3D] = []
-var fish_material: ShaderMaterial
 
 func _ready() -> void:
 	river = get_parent()
@@ -20,7 +18,6 @@ func _ready() -> void:
 	water = river.get_node("RiverWater")
 	_create_crocodiles()
 	_create_fish_shadows()
-	_create_asset_credit()
 	# Restore the close, forward-facing camera from the original river scene.
 	river.camera.position = Vector3(0, 3.5, 5.2)
 	river.camera.rotation_degrees.x = -20.0
@@ -67,8 +64,6 @@ func _create_crocodiles() -> void:
 				animator.play("Idle")
 		croc.set_meta("course_z", -85.0 - i * 100.0)
 		croc.set_meta("activated_at", -1.0)
-		croc.set_meta("hit", false)
-		croc.set_meta("hit_until", 0.0)
 		croc.position = Vector3(-CROCODILE_PATROL_WIDTH, -0.12, float(croc.get_meta("course_z")))
 		crocodiles.append(croc)
 		# A surface wake makes the submerged animal readable from the camera.
@@ -84,19 +79,6 @@ func _create_crocodiles() -> void:
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		wake.material_override = mat
 		croc.add_child(wake)
-
-func _create_asset_credit() -> void:
-	var panel = VBoxContainer.new()
-	warning_panel = panel
-	panel.position = Vector2(24, 85)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Attribution is kept in ASSET_CREDITS.md rather than the gameplay HUD.
-	panel.visible = false
-	river.hud_layer.add_child(panel)
-	var credit = Label.new()
-	credit.text = "Crocodile: Duc Tran • CC BY 4.0"
-	credit.add_theme_font_size_override("font_size", 11)
-	panel.add_child(credit)
 
 func _physics_process(delta: float) -> void:
 	if river.game_state != river.GameState.PLAYING:
@@ -121,16 +103,17 @@ func _send_snapshot(delta: float) -> void:
 		for croc in crocodiles:
 			activation_times.append(croc.get_meta("activated_at"))
 		var hazards = river.get_node_or_null("RiverHazards")
-		var tree_times: Array = hazards.get_tree_times() if hazards != null else []
-		_sync_chase.rpc(clock, river.boat_health, river.game_state, activation_times, river.victory_elapsed, river.victory_start_x, tree_times)
+		var tree_times: Array = hazards.get_tree_activation_times() if hazards != null else []
+		for id in NetworkManager.get_loaded_game_peers():
+			_sync_game_state.rpc_id(id, clock, river.boat_health, river.game_state, activation_times, river.victory_elapsed, river.victory_start_x, tree_times)
 
 @rpc("authority", "unreliable_ordered")
-func _sync_chase(time: float, health: float, state: int, activation_times: Array, ending_time: float = 0.0, ending_x: float = 0.0, tree_times: Array = []) -> void:
+func _sync_game_state(time: float, health: float, state: int, activation_times: Array, ending_time: float = 0.0, ending_x: float = 0.0, tree_times: Array = []) -> void:
 	clock = time
 	river.boat_health = health
 	var hazards = river.get_node_or_null("RiverHazards")
 	if hazards != null:
-		hazards.set_tree_times(tree_times)
+		hazards.set_tree_activation_times(tree_times)
 	for i in range(mini(activation_times.size(), crocodiles.size())):
 		crocodiles[i].set_meta("activated_at", activation_times[i])
 	if state != river.game_state:
@@ -141,9 +124,6 @@ func _sync_chase(time: float, health: float, state: int, activation_times: Array
 	if state == river.GameState.WON:
 		river.victory_elapsed = ending_time
 		river.victory_start_x = ending_x
-
-func hide_chase_ui() -> void:
-	warning_panel.hide()
 
 func _update_crocodiles(authority: bool) -> void:
 	for i in range(crocodiles.size()):
@@ -176,7 +156,6 @@ func _create_fish_shadows() -> void:
 	var material = ShaderMaterial.new()
 	material.shader = load("res://fish_shadow.gdshader")
 	material.set_shader_parameter("water_center_z", water.position.z)
-	fish_material = material
 	var rng = RandomNumberGenerator.new()
 	rng.seed = 81642
 	for school_index in range(7):

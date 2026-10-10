@@ -8,20 +8,21 @@ const WHIRL_RADIUS: float = 3.0
 
 var river: Node3D
 var boat: CharacterBody3D
-var chase: Node3D
+var wildlife: Node3D
 var trees: Array[Node3D] = []
 var whirlpools: Array[MeshInstance3D] = []
 var leak_nodes: Array[Node3D] = []
 var bilge: MeshInstance3D
-var jumpers: Array[Node3D] = []
+var jumping_fish: Array[Node3D] = []
 
 func _ready() -> void:
 	river = get_parent()
 	boat = river.boat
-	chase = river.get_node("RiverChase")
+	wildlife = river.get_node("RiverWildlife")
 	_create_trees()
 	_create_whirlpools()
 	_clear_tree_lanes()
+	_create_finale()
 	_create_leaks()
 	_create_jumping_fish()
 
@@ -42,7 +43,7 @@ func _material(color: Color) -> StandardMaterial3D:
 	mat.roughness = 0.8
 	return mat
 
-func _mesh(parent: Node3D, mesh: Mesh, pos: Vector3, material: Material) -> MeshInstance3D:
+func _add_mesh_instance(parent: Node3D, mesh: Mesh, pos: Vector3, material: Material) -> MeshInstance3D:
 	var instance = MeshInstance3D.new()
 	instance.mesh = mesh
 	instance.position = pos
@@ -50,7 +51,7 @@ func _mesh(parent: Node3D, mesh: Mesh, pos: Vector3, material: Material) -> Mesh
 	parent.add_child(instance)
 	return instance
 
-func _sphere(radius: float) -> SphereMesh:
+func _create_sphere_mesh(radius: float) -> SphereMesh:
 	var sphere = SphereMesh.new()
 	sphere.radius = radius
 	sphere.height = radius * 2.0
@@ -59,12 +60,14 @@ func _sphere(radius: float) -> SphereMesh:
 	return sphere
 
 func _create_trees() -> void:
-	var tree_assets = ["Tree_2_A_Color1.fbx", "Tree_2_B_Color1.fbx", "Tree_Bare_2_A_Color1.fbx"]
+	var tree_assets = ["Tree_1_A_Color1.fbx", "Tree_3_A_Color1.fbx", "Tree_Bare_2_A_Color1.fbx"]
 	for i in range(12):
 		var tree = Node3D.new()
 		tree.name = "TreeHazard%d" % i
 		var side = 1.0 if i % 2 == 0 else -1.0
 		tree.position = Vector3(side * 9.4, 0.15, -70.0 - i * 80.0)
+		if i >= 9:
+			tree.position.z = [-760.0, -910.0, -955.0][i - 9]
 		tree.set_meta("side", side)
 		tree.set_meta("triggered_at", -1.0)
 		tree.set_meta("hit", false)
@@ -80,12 +83,23 @@ func _create_trees() -> void:
 		model.name = "SceneryTree"
 		body.add_child(model)
 		model.rotation.y = i * 0.73
-		var bounds: AABB = chase._mesh_bounds(model)
+		var bounds: AABB = wildlife._mesh_bounds(model)
 		var factor = TREE_LENGTH / maxf(bounds.size.y, 0.01)
 		model.scale *= factor
 		# Place the imported trunk base on the falling pivot rather than
 		# rotating around the model's inconsistent original origin.
 		model.position -= Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z) * factor
+		for mesh_node in model.find_children("*", "MeshInstance3D", true, false):
+			for surface_index in range(mesh_node.mesh.get_surface_count()):
+				var original = mesh_node.get_active_material(surface_index)
+				if original is StandardMaterial3D:
+					var detailed = ShaderMaterial.new()
+					detailed.shader = load("res://tree_surface.gdshader")
+					detailed.set_shader_parameter("base_color", original.albedo_color)
+					detailed.set_shader_parameter("use_texture", original.albedo_texture != null)
+					if original.albedo_texture != null:
+						detailed.set_shader_parameter("base_texture", original.albedo_texture)
+					mesh_node.set_surface_override_material(surface_index, detailed)
 		var collider = CollisionShape3D.new()
 		var capsule = CapsuleShape3D.new()
 		capsule.radius = 0.38
@@ -94,13 +108,13 @@ func _create_trees() -> void:
 		collider.position.y = TREE_LENGTH / 2.0
 		body.add_child(collider)
 
-func get_tree_times() -> Array:
+func get_tree_activation_times() -> Array:
 	var times: Array = []
 	for tree in trees:
 		times.append(tree.get_meta("triggered_at"))
 	return times
 
-func set_tree_times(times: Array) -> void:
+func set_tree_activation_times(times: Array) -> void:
 	for i in range(mini(times.size(), trees.size())):
 		trees[i].set_meta("triggered_at", times[i])
 
@@ -110,11 +124,11 @@ func update_trees(authority: bool) -> void:
 		var distance = boat.position.z - tree.position.z
 		var warning_distance = maxf(28.0, maxf(0.0, -boat.velocity.z) * 4.5)
 		if authority and triggered < 0.0 and distance >= -3.0 and distance < warning_distance:
-			triggered = chase.clock
+			triggered = wildlife.clock
 			tree.set_meta("triggered_at", triggered)
 		if triggered < 0.0:
 			continue
-		var elapsed = maxf(0.0, chase.clock - triggered)
+		var elapsed = maxf(0.0, wildlife.clock - triggered)
 		var side = float(tree.get_meta("side"))
 		var fall = clampf((elapsed - TREE_WARNING) / TREE_FALL_TIME, 0.0, 1.0)
 		var angle = side * (fall * fall * PI / 2.0)
@@ -141,11 +155,38 @@ func _create_whirlpools() -> void:
 		material.shader = load("res://whirlpool.gdshader")
 		var direction = 1.0 if i % 2 == 0 else -1.0
 		material.set_shader_parameter("spin_direction", direction)
-		var whirl = _mesh(self, plane, Vector3(direction * 4.3, 0.055, -115.0 - i * 100.0), material)
+		var whirl = _add_mesh_instance(self, plane, Vector3(direction * 4.3, 0.055, -115.0 - i * 100.0), material)
 		whirl.name = "Whirlpool%d" % i
+		if i >= 7:
+			whirl.position = Vector3(0, 0.055, -860.0 - (i - 7) * 35.0)
+		whirl.set_meta("base_position", whirl.position)
+		whirl.set_meta("phase", i * 1.7)
 		whirl.set_meta("direction", direction)
 		whirl.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		whirlpools.append(whirl)
+
+func update_whirlpools() -> void:
+	for i in range(whirlpools.size()):
+		var whirl = whirlpools[i]
+		var base: Vector3 = whirl.get_meta("base_position")
+		var phase = float(whirl.get_meta("phase"))
+		var amplitude = 3.8 if i >= 7 else 1.0
+		whirl.position = base + Vector3(sin(wildlife.clock * 0.25 + phase) * amplitude, 0, cos(wildlife.clock * 0.18 + phase) * 1.8)
+
+func _create_finale() -> void:
+	var obstacles = river.get_node("Obstacles")
+	var rock_material = _material(Color(0.35, 0.4, 0.39))
+	var buoy_material = _material(Color(1, 0.72, 0.18))
+	for row in range(2):
+		var z = -790.0 - row * 35.0
+		var gap_x = -3.2 if row == 0 else 3.2
+		for x in [-6.3, -2.1, 2.1, 6.3]:
+			if absf(x - gap_x) > 2.4:
+				river._spawn_rock(obstacles, Vector3(x, 0.2, z), 1.15, rock_material)
+		# Bright floating buoys mark the open lane without warning text.
+		for side in [-1, 1]:
+			var buoy = _add_mesh_instance(self, _create_sphere_mesh(0.25), Vector3(gap_x + side * 2.1, 0.2, z + 3), buoy_material)
+			buoy.name = "FinaleBuoy%d_%d" % [row, side]
 
 func get_turbulence_at(position: Vector3) -> float:
 	var intensity = 0.0
@@ -155,6 +196,7 @@ func get_turbulence_at(position: Vector3) -> float:
 	return intensity
 
 func apply_whirlpool_forces(delta: float) -> void:
+	update_whirlpools()
 	if river.game_state != river.GameState.PLAYING:
 		return
 	for whirl in whirlpools:
@@ -176,7 +218,7 @@ func _create_leaks() -> void:
 	water_material.shader = load("res://bilge_water.gdshader")
 	var pool = PlaneMesh.new()
 	pool.size = Vector2(1.0, 2.5)
-	bilge = _mesh(boat.boat_visual_root, pool, Vector3(0, HULL_FLOOR_Y + 0.014, 0), water_material)
+	bilge = _add_mesh_instance(boat.boat_visual_root, pool, Vector3(0, HULL_FLOOR_Y + 0.014, 0), water_material)
 	bilge.name = "HullWater"
 	bilge.visible = false
 	var crack_material = _material(Color(0.06, 0.035, 0.02))
@@ -191,7 +233,7 @@ func _create_leaks() -> void:
 		for segment in range(3):
 			var crack = BoxMesh.new()
 			crack.size = Vector3(0.028, 0.004, 0.13)
-			var instance = _mesh(leak, crack, Vector3(sin(segment * 2.0) * 0.035, 0, segment * 0.10), crack_material)
+			var instance = _add_mesh_instance(leak, crack, Vector3(sin(segment * 2.0) * 0.035, 0, segment * 0.10), crack_material)
 			instance.rotation.y = 0.45 if segment % 2 == 0 else -0.45
 		var particles = CPUParticles3D.new()
 		particles.name = "WaterSpurt"
@@ -202,7 +244,7 @@ func _create_leaks() -> void:
 		particles.initial_velocity_min = 0.25
 		particles.initial_velocity_max = 0.55
 		particles.gravity = Vector3(0, -3, 0)
-		particles.mesh = _sphere(0.035)
+		particles.mesh = _create_sphere_mesh(0.035)
 		particles.mesh.material = _material(Color(0.65, 0.9, 1.0))
 		particles.emitting = false
 		leak.add_child(particles)
@@ -225,18 +267,18 @@ func _create_jumping_fish() -> void:
 		fish.set_meta("cycle", -1)
 		fish.set_meta("start", Vector3.ZERO)
 		add_child(fish)
-		jumpers.append(fish)
+		jumping_fish.append(fish)
 		var material = _material(Color(0.2, 0.65, 0.85) if i == 0 else Color(0.9, 0.6, 0.17))
-		var body = _mesh(fish, _sphere(0.18), Vector3.ZERO, material)
+		var body = _add_mesh_instance(fish, _create_sphere_mesh(0.18), Vector3.ZERO, material)
 		body.scale.z = 2.7
 		var fin = PrismMesh.new()
 		fin.size = Vector3(0.4, 0.035, 0.32)
-		_mesh(fish, fin, Vector3(0, 0, -0.5), material)
+		_add_mesh_instance(fish, fin, Vector3(0, 0, -0.5), material)
 		var dorsal = PrismMesh.new()
 		dorsal.size = Vector3(0.04, 0.22, 0.25)
-		_mesh(fish, dorsal, Vector3(0, 0.2, 0), material)
+		_add_mesh_instance(fish, dorsal, Vector3(0, 0.2, 0), material)
 		for side in [-1, 1]:
-			_mesh(fish, _sphere(0.035), Vector3(side * 0.15, 0.055, 0.25), _material(Color(0.015, 0.03, 0.04)))
+			_add_mesh_instance(fish, _create_sphere_mesh(0.035), Vector3(side * 0.15, 0.055, 0.25), _material(Color(0.015, 0.03, 0.04)))
 		var splash = MeshInstance3D.new()
 		splash.name = "Splash"
 		var ring = TorusMesh.new()
@@ -249,12 +291,12 @@ func _create_jumping_fish() -> void:
 		fish.set_meta("splash", splash.get_path())
 
 func update_jumping_fish() -> void:
-	for i in range(jumpers.size()):
-		var fish = jumpers[i]
-		var time = maxf(0.0, chase.clock - (6.0 + i * 7.0))
+	for i in range(jumping_fish.size()):
+		var fish = jumping_fish[i]
+		var time = maxf(0.0, wildlife.clock - (6.0 + i * 7.0))
 		var cycle = int(time / 17.0)
 		var local_time = fmod(time, 17.0)
-		var active = chase.clock >= 6.0 + i * 7.0 and local_time < 1.5 and river.game_state == river.GameState.PLAYING
+		var active = wildlife.clock >= 6.0 + i * 7.0 and local_time < 1.5 and river.game_state == river.GameState.PLAYING
 		if active and cycle != int(fish.get_meta("cycle")):
 			fish.set_meta("cycle", cycle)
 			fish.set_meta("start", Vector3(boat.position.x + (-3.0 if i == 0 else 3.0), 0, boat.position.z - 9.0))
@@ -276,6 +318,7 @@ func _physics_process(_delta: float) -> void:
 		update_trees(true)
 
 func _process(_delta: float) -> void:
+	update_whirlpools()
 	update_trees(false)
 	update_leaks()
 	update_jumping_fish()

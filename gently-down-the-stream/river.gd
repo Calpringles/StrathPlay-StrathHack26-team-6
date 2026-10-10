@@ -67,14 +67,15 @@ func _ready() -> void:
 	_create_finish_line()
 	_create_waterfall()
 	_create_hud()
-	var flood = Node3D.new()
-	flood.name = "RiverChase"
-	flood.set_script(load("res://river_chase.gd"))
-	add_child(flood)
+	var wildlife = Node3D.new()
+	wildlife.name = "RiverWildlife"
+	wildlife.set_script(load("res://river_wildlife.gd"))
+	add_child(wildlife)
 	var hazards = Node3D.new()
 	hazards.name = "RiverHazards"
 	hazards.set_script(load("res://river_hazards.gd"))
 	add_child(hazards)
+	NetworkManager.call_deferred("notify_game_loaded")
 
 	# Connect boat sync and damage events
 	if boat.has_signal("sync_row_achieved"):
@@ -398,8 +399,8 @@ func _decorate_banks() -> void:
 
 	# Pre-load all assets that actually exist on disk
 	var loaded: Dictionary = {}
-	for arr in [tree_assets, bush_assets, rock_assets, grass_assets]:
-		for filename in arr:
+	for asset_list in [tree_assets, bush_assets, rock_assets, grass_assets]:
+		for filename in asset_list:
 			var path = ASSET_BASE + filename
 			if not loaded.has(filename) and ResourceLoader.exists(path):
 				loaded[filename] = load(path)
@@ -451,8 +452,8 @@ func _decorate_banks() -> void:
 				var ground_y = get_ground_height(x_pos, z)
 				inst.position = Vector3(x_pos, ground_y, z)
 				inst.rotation_degrees.y = rng.randf_range(0.0, 360.0)
-				var scl = rng.randf_range(0.55, 1.0)
-				inst.scale = Vector3(scl, scl, scl)
+				var asset_scale = rng.randf_range(0.55, 1.0)
+				inst.scale = Vector3(asset_scale, asset_scale, asset_scale)
 				deco_root.add_child(inst)
 				_settle_decoration(inst, x_pos, z)
 
@@ -479,8 +480,8 @@ func _decorate_banks() -> void:
 				var ground_y = get_ground_height(x_pos, z)
 				inst.position = Vector3(x_pos, ground_y, z)
 				inst.rotation_degrees.y = rng.randf_range(0.0, 360.0)
-				var scl = rng.randf_range(0.9, 1.5)
-				inst.scale = Vector3(scl, scl, scl)
+				var asset_scale = rng.randf_range(0.9, 1.5)
+				inst.scale = Vector3(asset_scale, asset_scale, asset_scale)
 				deco_root.add_child(inst)
 				_settle_decoration(inst, x_pos, z)
 
@@ -494,8 +495,8 @@ func _decorate_banks() -> void:
 					var twin_ground_y = get_ground_height(x_twin, twin_z)
 					twin.position = Vector3(x_twin, twin_ground_y, twin_z)
 					twin.rotation_degrees.y = rng.randf_range(0.0, 360.0)
-					var scl2 = rng.randf_range(0.8, 1.3)
-					twin.scale = Vector3(scl2, scl2, scl2)
+					var secondary_scale = rng.randf_range(0.8, 1.3)
+					twin.scale = Vector3(secondary_scale, secondary_scale, secondary_scale)
 					deco_root.add_child(twin)
 					_settle_decoration(twin, x_twin, twin_z)
 
@@ -511,8 +512,8 @@ func _decorate_banks() -> void:
 				var ground_y = get_ground_height(x_pos, z)
 				inst.position = Vector3(x_pos, ground_y, z)
 				inst.rotation_degrees.y = rng.randf_range(0.0, 360.0)
-				var scl = rng.randf_range(1.4, 2.2)
-				inst.scale = Vector3(scl, scl, scl)
+				var asset_scale = rng.randf_range(1.4, 2.2)
+				inst.scale = Vector3(asset_scale, asset_scale, asset_scale)
 				deco_root.add_child(inst)
 				_settle_decoration(inst, x_pos, z)
 
@@ -537,6 +538,8 @@ func _generate_obstacles() -> void:
 	# Generate obstacle rows every 28 to 35 meters along the river
 	var current_z: float = -45.0
 	while current_z > -(RIVER_LENGTH - 60.0):
+		if current_z < -720.0:
+			break # The finale uses a deliberate course instead of random rows.
 		var pattern = rng.randi_range(0, 3)
 
 		if pattern == 0:
@@ -994,18 +997,18 @@ func _physics_process(_delta: float) -> void:
 				if not can_damage_from_object(collider):
 					continue
 				var col_name = collider.name
-				var dmg = 0.0
+				var collision_damage = 0.0
 				if collider.is_in_group("river_damage_obstacle") or col_name.begins_with("Rock"):
-					dmg = 15.0
+					collision_damage = 15.0
 				elif col_name.begins_with("Log"):
-					dmg = 10.0
+					collision_damage = 10.0
 				elif col_name.begins_with("Bank"):
-					dmg = 6.0
+					collision_damage = 6.0
 				elif col_name.begins_with("FallingTree"):
-					dmg = 18.0
+					collision_damage = 18.0
 
-				if dmg > 0.0:
-					apply_object_damage(collider, dmg, "Collided with %s!" % col_name)
+				if collision_damage > 0.0:
+					apply_object_damage(collider, collision_damage, "Collided with %s!" % col_name)
 					collided_obstacle = true
 					break
 
@@ -1042,7 +1045,8 @@ func _apply_damage(amount: float, reason: String) -> void:
 	# player sees the flash, notification, hull value, and game-over panel at
 	# the same time.
 	if multiplayer != null and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
-		_sync_damage.rpc(new_health, amount, reason)
+		for id in NetworkManager.get_loaded_game_peers():
+			_sync_damage.rpc_id(id, new_health, amount, reason)
 
 func _apply_damage_state(new_health: float, amount: float, reason: String) -> void:
 	boat_health = new_health
@@ -1073,11 +1077,35 @@ func _on_boat_sync_row(_seat_a: int, _seat_b: int) -> void:
 	_show_notification("⚡ PERFECT SYNC! +25% SPEED SURGE!", Color(0.4, 1.0, 0.5), 1.5)
 
 func _show_notification(text: String, col: Color, duration: float) -> void:
-	if notification_banner != null and notification_label != null:
-		notification_label.text = text
-		notification_label.modulate = col
-		notification_banner.visible = true
-		notif_timer = duration
+	# Gameplay uses hull feedback and visible hazards, without text warnings.
+	if notification_banner != null:
+		notification_banner.hide()
+
+func send_initial_state(peer_id: int) -> void:
+	var wildlife = get_node("RiverWildlife")
+	var activation_times: Array = []
+	for croc in wildlife.crocodiles:
+		activation_times.append(croc.get_meta("activated_at"))
+	_receive_initial_state.rpc_id(peer_id, {
+		"position": boat.position, "yaw": boat.rotation.y, "velocity": boat.velocity,
+		"turn_speed": boat.turn_speed, "health": boat_health, "state": game_state,
+		"elapsed": elapsed_time, "combos": sync_combos, "clock": wildlife.clock,
+		"crocodiles": activation_times, "trees": get_node("RiverHazards").get_tree_activation_times(),
+		"ending_time": victory_elapsed, "ending_x": victory_start_x
+	})
+
+@rpc("authority", "reliable")
+func _receive_initial_state(state: Dictionary) -> void:
+	boat.position = state.position
+	boat.rotation.y = state.yaw
+	boat.velocity = state.velocity
+	boat.turn_speed = state.turn_speed
+	elapsed_time = state.elapsed
+	sync_combos = state.combos
+	get_node("RiverWildlife")._sync_game_state(state.clock, state.health, state.state, state.crocodiles, state.ending_time, state.ending_x, state.trees)
+	get_node("RiverHazards").update_trees(false)
+	_update_hud(0.0)
+	NetworkManager.local_game_loaded = true
 
 func _update_hud(_delta: float) -> void:
 	if distance_bar != null:
@@ -1086,8 +1114,8 @@ func _update_hud(_delta: float) -> void:
 		distance_label.text = " %dm / %dm" % [int(distance_traveled), int(RIVER_LENGTH)]
 
 	if speed_label != null and boat != null:
-		var spd = boat.velocity.length()
-		speed_label.text = "Speed: %.1f m/s" % spd
+		var speed = boat.velocity.length()
+		speed_label.text = "Speed: %.1f m/s" % speed
 
 	if health_bar != null:
 		health_bar.value = boat_health
@@ -1131,9 +1159,6 @@ func _trigger_victory() -> void:
 	camera.global_position = Vector3(16, 10, WATERFALL_Z + 15)
 	camera.look_at(Vector3(0, -5, WATERFALL_Z - 5), Vector3.UP)
 	cam_base_pos = camera.position
-	var chase = get_node_or_null("RiverChase")
-	if chase != null:
-		chase.hide_chase_ui()
 
 func _update_victory_ending(delta: float) -> void:
 	victory_elapsed += delta
@@ -1274,10 +1299,12 @@ func _on_retry_pressed() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _restart_river() -> void:
+	NetworkManager.loaded_game_peers.clear()
+	NetworkManager.local_game_loaded = false
 	get_tree().reload_current_scene()
 
 func _on_return_to_lobby_pressed() -> void:
-	var nm = get_node_or_null("/root/NetworkManager")
-	if nm != null and nm.has_method("disconnect_game"):
-		nm.disconnect_game()
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager != null and network_manager.has_method("disconnect_game"):
+		network_manager.disconnect_game()
 	get_tree().change_scene_to_file("res://networking/Lobby.tscn")

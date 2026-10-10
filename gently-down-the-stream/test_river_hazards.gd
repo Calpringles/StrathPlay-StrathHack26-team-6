@@ -8,14 +8,23 @@ func _run() -> void:
 	root.add_child(river)
 	await process_frame
 	var boat = river.boat
-	var chase = river.get_node("RiverChase")
+	var wildlife = river.get_node("RiverWildlife")
 	var hazards = river.get_node("RiverHazards")
-	for node in [river, boat, chase, hazards]:
+	for node in [river, boat, wildlife, hazards]:
 		node.set_process(false)
 		node.set_physics_process(false)
-	chase.clock = 0.0
+	wildlife.clock = 0.0
 	assert(hazards.trees.size() == 12 and hazards.trees.back().position.z <= -950.0, "Trees must span the full course")
 	assert(hazards.whirlpools.size() == 9, "Whirlpools must span the course")
+	var whirl_start = hazards.whirlpools[0].position
+	wildlife.clock = 8.0
+	hazards.update_whirlpools()
+	assert(not hazards.whirlpools[0].position.is_equal_approx(whirl_start), "Whirlpools must move")
+	wildlife.clock = 0.0
+	hazards.update_whirlpools()
+	assert(hazards.get_node_or_null("FinaleBuoy0_-1") != null, "Finale must mark alternate rock gaps")
+	river._show_notification("Test warning", Color.RED, 2.0)
+	assert(not river.notification_banner.visible, "Gameplay text warnings must stay hidden")
 	var environment = river.get_node("WorldEnvironment").environment
 	assert(is_zero_approx(environment.fog_sky_affect), "Fog must not wash out the sky")
 	assert(environment.sky.sky_material.shader.resource_path.ends_with("SourceCode/shader/main.gdshader"), "Sky must use the imported cloud package")
@@ -23,7 +32,7 @@ func _run() -> void:
 	var tree = hazards.trees[0]
 	var scenery_tree = tree.get_node("FallingTree0/SceneryTree")
 	assert(scenery_tree.scene_file_path.ends_with(".fbx"), "Falling trees must use scenery models")
-	var tree_bounds = chase._mesh_bounds(scenery_tree)
+	var tree_bounds = wildlife._mesh_bounds(scenery_tree)
 	assert(is_equal_approx(tree_bounds.size.y, hazards.TREE_LENGTH), "Scenery tree must match falling collider height")
 	assert(absf(tree_bounds.position.y) < 0.001, "Falling tree must pivot at its base")
 	boat.position = Vector3(-6.0, 0.2, tree.position.z + 20.0)
@@ -32,20 +41,21 @@ func _run() -> void:
 	assert(is_equal_approx(float(tree.get_meta("triggered_at")), 0.0), "Approaching tree must trigger warning")
 	assert(tree.get_node_or_null("Warning") == null, "Tree must not display warning text")
 	assert(absf(tree.get_node("FallingTree0").rotation.z) < 0.1, "Warning must precede the fall")
-	chase.clock = hazards.TREE_WARNING + hazards.TREE_FALL_TIME
+	wildlife.clock = hazards.TREE_WARNING + hazards.TREE_FALL_TIME
 	hazards.update_trees(true)
 	assert(is_equal_approx(absf(tree.get_node("FallingTree0").rotation.z), PI / 2.0), "Tree must fall across river")
 	assert(river.boat_health == 100.0, "Clear lane must avoid damage")
-	var times = hazards.get_tree_times()
+	var times = hazards.get_tree_activation_times()
 	times[1] = 2.0
-	chase._sync_chase(chase.clock, 100.0, river.GameState.PLAYING, [], 0.0, 0.0, times)
+	wildlife._sync_game_state(wildlife.clock, 100.0, river.GameState.PLAYING, [], 0.0, 0.0, times)
 	assert(is_equal_approx(float(hazards.trees[1].get_meta("triggered_at")), 2.0), "Snapshots must reproduce tree timing")
 	var second_tree = hazards.trees[1]
 	boat.position = Vector3(0, 0.2, second_tree.position.z)
-	chase.clock = 2.0 + hazards.TREE_WARNING + hazards.TREE_FALL_TIME * 0.95
+	wildlife.clock = 2.0 + hazards.TREE_WARNING + hazards.TREE_FALL_TIME * 0.95
 	river.damage_cooldown = 0.0
 	hazards.update_trees(true)
 	assert(is_equal_approx(river.boat_health, 82.0), "Falling tree must damage a boat in its path")
+	hazards.update_whirlpools()
 	var whirl = hazards.whirlpools[0]
 	boat.position = whirl.position + Vector3(1.0, 0.2, 0)
 	boat.velocity = Vector3.ZERO
@@ -72,15 +82,15 @@ func _run() -> void:
 	river.boat_health = 15.0
 	hazards.update_leaks()
 	assert(hazards.leak_nodes[3].visible and hazards.bilge.visible, "Heavy damage must show more leaks and pooled water")
-	chase.clock = 6.5
+	wildlife.clock = 6.5
 	hazards.update_jumping_fish()
-	assert(hazards.jumpers[0].visible and hazards.jumpers[0].position.y > 0.5, "Fish must jump above surface")
-	chase.clock = 9.0
+	assert(hazards.jumping_fish[0].visible and hazards.jumping_fish[0].position.y > 0.5, "Fish must jump above surface")
+	wildlife.clock = 9.0
 	hazards.update_jumping_fish()
-	assert(not hazards.jumpers[0].visible, "Fish must return underwater")
-	chase.clock = 23.2
+	assert(not hazards.jumping_fish[0].visible, "Fish must return underwater")
+	wildlife.clock = 23.2
 	hazards.update_jumping_fish()
-	assert(hazards.jumpers[0].visible, "Fish jumps must repeat occasionally")
+	assert(hazards.jumping_fish[0].visible, "Fish jumps must repeat occasionally")
 	river.boat_health = 100.0
 	var object = Node3D.new()
 	river.add_child(object)
