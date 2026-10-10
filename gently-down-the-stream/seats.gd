@@ -1,9 +1,9 @@
 extends Node3D
 
-@export var row_spacing: float = 1.2
-@export var seat_spacing: float = 0.9
-@export var seat_height: float = 0.35
-@export var seat_size: Vector3 = Vector3(0.65, 0.12, 0.65)
+@export var row_spacing: float = 0.82
+@export var seat_spacing: float = 0.62
+@export var seat_height: float = 0.22
+@export var seat_size: Vector3 = Vector3(0.38, 0.08, 0.30)
 
 # Moves all seats forwards or backwards inside the boat.
 @export var centre_z: float = 0.0

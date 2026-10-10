@@ -23,7 +23,7 @@ var elapsed_time: float = 0.0
 
 # Camera Shake
 var shake_intensity: float = 0.0
-var cam_base_pos: Vector3 = Vector3(0, 3.5, 5.2)
+var cam_base_pos: Vector3 = Vector3(0, 2.5, 3.8)
 
 # UI Elements (built dynamically in _create_hud)
 var hud_layer: CanvasLayer
