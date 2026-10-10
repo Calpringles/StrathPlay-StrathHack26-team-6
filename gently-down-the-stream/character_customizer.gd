@@ -54,12 +54,12 @@ const HAT_NAMES: Array[String] = [
 ]
 
 static func get_default_customization(seat_idx: int = 0) -> Dictionary:
-	var default_shirt = PALETTE[3] # Red
-	if seat_idx == 1: default_shirt = PALETTE[8] # Blue
-	elif seat_idx == 2: default_shirt = PALETTE[6] # Green
-	elif seat_idx == 3: default_shirt = PALETTE[5] # Yellow
-	elif seat_idx == 4: default_shirt = PALETTE[9] # Purple
-	elif seat_idx == 5: default_shirt = PALETTE[7] # Teal
+	var _default_shirt = PALETTE[3] # Red
+	if seat_idx == 1: _default_shirt = PALETTE[8] # Blue
+	elif seat_idx == 2: _default_shirt = PALETTE[6] # Green
+	elif seat_idx == 3: _default_shirt = PALETTE[5] # Yellow
+	elif seat_idx == 4: _default_shirt = PALETTE[9] # Purple
+	elif seat_idx == 5: _default_shirt = PALETTE[7] # Teal
 
 	return {
 		"skin_idx": 1,         # Warm Tan
