@@ -18,6 +18,10 @@ var local_customization: Dictionary = {}
 
 var peer: ENetMultiplayerPeer
 
+func is_connection_ready() -> bool:
+	return multiplayer != null and multiplayer.has_multiplayer_peer() and \
+		(multiplayer.is_server() or multiplayer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
+
 func _ready() -> void:
 	local_customization = CharacterCustomizer.get_default_customization(0)
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -153,7 +157,7 @@ func set_local_customization(custom_data: Dictionary) -> void:
 	var my_id = multiplayer.get_unique_id() if (multiplayer != null and multiplayer.has_multiplayer_peer()) else 1
 	if players.has(my_id):
 		players[my_id]["customization"] = custom_data
-	if multiplayer != null and multiplayer.has_multiplayer_peer():
+	if is_connection_ready():
 		if multiplayer.is_server():
 			_sync_players_to_clients.rpc(players)
 		else:

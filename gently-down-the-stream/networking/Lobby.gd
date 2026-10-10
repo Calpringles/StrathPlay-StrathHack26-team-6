@@ -214,6 +214,11 @@ func _on_copy_ip_pressed() -> void:
 	copy_ip_button.text = "Copy IP"
 
 func _on_seat_selected(seat_index: int) -> void:
+	# The lobby can be visible while a client is still connecting. Do not send
+	# RPCs until ENet has completed its handshake.
+	if NetworkManager == null or not NetworkManager.is_connection_ready():
+		connect_status_label.text = "Still connecting — please try again in a moment."
+		return
 	if multiplayer.is_server():
 		NetworkManager.request_seat(seat_index)
 	else:

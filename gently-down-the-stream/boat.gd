@@ -13,7 +13,7 @@ signal sync_row_achieved(seat_a: int, seat_b: int)
 @export_group("Rowing Physics")
 @export var stroke_power: float = 2.4
 @export var turn_power: float = 0.45
-@export var current_speed: float = 1.6
+@export var current_speed: float = 0.0
 @export var water_drag_longitudinal: float = 0.65
 @export var water_drag_lateral: float = 3.6
 @export var turn_drag: float = 2.8
