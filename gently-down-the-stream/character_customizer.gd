@@ -14,7 +14,7 @@ const PALETTE: Array[Color] = [
 	Color("#3498db"), # 8: Sky Blue
 	Color("#9b59b6"), # 9: Royal Purple
 	Color("#ff9ff3"), # 10: Bubblegum Pink
-	Color("#34495e"), # 11: Charcoal / Navy
+	Color("#34495e"), # 11:  Navy
 	Color("#f5f6fa")  # 12: Pure White
 ]
 
@@ -94,7 +94,7 @@ static func _draw_thick_line(img: Image, x0: int, y0: int, x1: int, y1: int, col
 	var sx = 1 if x0 < x1 else -1
 	var sy = 1 if y0 < y1 else -1
 	var err = dx + dy
-	var r = thickness / 2
+	var r: int = int(thickness / 2.0)
 	while true:
 		for ox in range(-r, r + 1):
 			for oy in range(-r, r + 1):

@@ -198,6 +198,9 @@ func request_seat(seat_index: int) -> void:
 func start_game(scene_path: String) -> void:
 	if not multiplayer.is_server():
 		return
+	# Ensure every peer has the final names, seats, and customization data
+	# before the river scene is created on each machine.
+	_sync_players_to_clients.rpc(players)
 	_load_game_scene.rpc(scene_path)
 
 @rpc("authority", "call_local", "reliable")

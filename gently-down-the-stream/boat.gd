@@ -122,6 +122,9 @@ func _ready() -> void:
 		last_stroke_times.append(-999.0)
 
 	_update_seat_labels()
+	# Scene changes can arrive immediately after the roster RPC. Refresh once
+	# deferred so all synced player data is available before showing rowers.
+	call_deferred("_update_seat_labels")
 
 	# Listen for network roster updates if NetworkManager is active
 	if is_inside_tree():
@@ -130,6 +133,8 @@ func _ready() -> void:
 			nm.player_list_updated.connect(_update_seat_labels)
 
 func _setup_collision() -> void:
+	collision_layer = 1
+	collision_mask = 1
 	var col_shape: CollisionShape3D = get_node_or_null("CollisionShape3D")
 	if col_shape == null:
 		col_shape = CollisionShape3D.new()
@@ -348,7 +353,12 @@ func _build_boat_visuals() -> void:
 		oars.append(pivot)
 
 func _is_multiplayer_active() -> bool:
-	return is_inside_tree() and multiplayer != null and multiplayer.has_multiplayer_peer()
+	if not is_inside_tree() or multiplayer == null or not multiplayer.has_multiplayer_peer():
+		return false
+	var active_peer: MultiplayerPeer = multiplayer.multiplayer_peer
+	# A peer object can exist while a client is still connecting or after a
+	# failed attempt. Only treat the game as multiplayer after the handshake.
+	return multiplayer.is_server() or active_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
 
 func _is_server() -> bool:
 	return not _is_multiplayer_active() or (multiplayer != null and multiplayer.is_server())

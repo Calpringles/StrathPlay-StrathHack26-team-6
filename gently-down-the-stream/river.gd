@@ -49,6 +49,7 @@ func _ready() -> void:
 	_create_river_banks()
 	_generate_obstacles()
 	_decorate_banks()
+	_create_start_banner()
 	_create_finish_line()
 	_create_hud()
 
@@ -70,27 +71,56 @@ func _create_environment() -> void:
 		
 		# Procedural daylight sky
 		var sky_mat: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
-		sky_mat.sky_top_color = Color(0.38, 0.64, 0.90, 1.0)
-		sky_mat.sky_horizon_color = Color(0.68, 0.78, 0.84, 1.0)
-		sky_mat.ground_bottom_color = Color(0.18, 0.22, 0.18, 1.0)
-		sky_mat.ground_horizon_color = Color(0.68, 0.78, 0.84, 1.0)
+		sky_mat.sky_top_color = Color("#466579")
+		sky_mat.sky_horizon_color = Color("#a9bbc0")
+		sky_mat.ground_bottom_color = Color("#4f6255")
+		sky_mat.ground_horizon_color = Color("#b2c0bd")
+		sky_mat.sun_angle_max = 18.0
+		sky_mat.sun_curve = 0.08
 		var sky: Sky = Sky.new()
 		sky.sky_material = sky_mat
 		env.background_mode = Environment.BG_SKY
 		env.sky = sky
 
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-		env.ambient_light_energy = 0.85
+		env.ambient_light_energy = 0.58
 		env.tonemap_mode = Environment.TONE_MAPPER_ACES
 		env.fog_enabled = true
-		env.fog_light_color = Color(0.70, 0.82, 0.88, 1.0)
-		env.fog_density = 0.002
-		env_node.environment = env
+		env.fog_light_color = Color("#9fc9d0")
+		env.fog_density = 0.0012
+		env.fog_height = 2.0
+		env.fog_height_density = 0.018
 		add_child(env_node)
+	if env_node.environment == null:
+		env_node.environment = Environment.new()
+
+	# Always apply the restrained river look, including when the scene already
+	# contains a WorldEnvironment resource.
+	var active_env: Environment = env_node.environment
+	var muted_sky: Sky = Sky.new()
+	# Reliable built-in equivalent of the third reference: cool blue upper sky,
+	# pale blue-grey horizon, and a restrained daylight gradient.
+	var fallback_sky := ProceduralSkyMaterial.new()
+	fallback_sky.sky_top_color = Color("#587b98")
+	fallback_sky.sky_horizon_color = Color("#b8cbd1")
+	fallback_sky.ground_bottom_color = Color("#52675b")
+	fallback_sky.ground_horizon_color = Color("#b4c4bf")
+	fallback_sky.sun_angle_max = 24.0
+	fallback_sky.sun_curve = 0.12
+	muted_sky.sky_material = fallback_sky
+	active_env.background_mode = Environment.BG_SKY
+	active_env.sky = muted_sky
+	active_env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	active_env.ambient_light_energy = 0.38
+	active_env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	active_env.tonemap_exposure = 0.72
+	active_env.fog_enabled = true
+	active_env.fog_light_color = Color("#87979a")
+	active_env.fog_density = 0.0025
 
 	if directional_light != null:
 		directional_light.light_color = Color("#fff8e7")
-		directional_light.light_energy = 1.2
+		directional_light.light_energy = 0.65
 		directional_light.shadow_enabled = true
 		directional_light.rotation_degrees = Vector3(-45, -30, 0)
 
@@ -172,7 +202,7 @@ func _create_river_bed_and_water() -> void:
 	add_child(bed_mesh_inst)
 
 # Mathematical terrain height function so trees, props, and ground mesh share the EXACT same elevation
-func get_ground_height(x: float, z: float) -> float:
+func get_ground_height(x: float, _z: float) -> float:
 	var dist_from_river = absf(x) - (RIVER_WIDTH / 2.0)
 	if dist_from_river <= 0.0:
 		return 0.0 # River channel stays level with water surface
@@ -523,6 +553,9 @@ func _generate_obstacles() -> void:
 func _spawn_rock(parent: Node3D, pos: Vector3, radius: float, mat: Material) -> void:
 	var rock: StaticBody3D = StaticBody3D.new()
 	rock.name = "Rock"
+	rock.add_to_group("river_damage_obstacle")
+	rock.collision_layer = 1
+	rock.collision_mask = 1
 	rock.position = pos
 	parent.add_child(rock)
 
@@ -544,6 +577,9 @@ func _spawn_rock(parent: Node3D, pos: Vector3, radius: float, mat: Material) -> 
 func _spawn_log(parent: Node3D, pos: Vector3, length: float, mat: Material) -> void:
 	var log_body: StaticBody3D = StaticBody3D.new()
 	log_body.name = "Log"
+	log_body.add_to_group("river_damage_obstacle")
+	log_body.collision_layer = 1
+	log_body.collision_mask = 1
 	log_body.position = pos
 	parent.add_child(log_body)
 
@@ -613,6 +649,60 @@ func _create_finish_line() -> void:
 	finish_lbl.modulate = Color(0.1, 0.1, 0.1)
 	finish_lbl.position = Vector3(0.0, 5.8, 0.08)
 	finish_node.add_child(finish_lbl)
+
+func _create_start_banner() -> void:
+	var banner_root := Node3D.new()
+	banner_root.name = "StartingBanner"
+	banner_root.position = Vector3(0.0, 0.0, -13.0)
+	add_child(banner_root)
+
+	var wood_mat := StandardMaterial3D.new()
+	wood_mat.albedo_color = Color("#6b3f21")
+	wood_mat.roughness = 0.86
+
+	# Tall posts leave a generous opening for the boat and oars.
+	for side in [-1.0, 1.0]:
+		var post := MeshInstance3D.new()
+		var post_mesh := CylinderMesh.new()
+		post_mesh.top_radius = 0.28
+		post_mesh.bottom_radius = 0.38
+		post_mesh.height = 6.2
+		post.mesh = post_mesh
+		post.material_override = wood_mat
+		post.position = Vector3(side * 5.8, 3.1, 0.0)
+		banner_root.add_child(post)
+
+	var beam := MeshInstance3D.new()
+	var beam_mesh := BoxMesh.new()
+	beam_mesh.size = Vector3(12.4, 0.55, 0.55)
+	beam.mesh = beam_mesh
+	beam.material_override = wood_mat
+	beam.position = Vector3(0.0, 6.35, 0.0)
+	banner_root.add_child(beam)
+
+	# Dark backing makes the supplied logo readable against the sky.
+	var sign := MeshInstance3D.new()
+	var sign_mesh := BoxMesh.new()
+	sign_mesh.size = Vector3(7.2, 2.25, 0.16)
+	sign.mesh = sign_mesh
+	var sign_mat := StandardMaterial3D.new()
+	sign_mat.albedo_color = Color("#3b2418")
+	sign_mat.roughness = 0.9
+	sign.material_override = sign_mat
+	sign.position = Vector3(0.0, 5.10, -0.03)
+	banner_root.add_child(sign)
+
+	var banner_texture = load("res://Game-Assets/Banner/strathhack for banner.webp")
+	if banner_texture != null:
+		var logo := Sprite3D.new()
+		logo.texture = banner_texture
+		logo.pixel_size = 0.0075
+		logo.shaded = false
+		logo.no_depth_test = false
+		# Put the logo on the camera-facing side of the wooden backing.
+		logo.position = Vector3(0.0, 5.10, 0.13)
+		logo.rotation_degrees.y = 0.0
+		banner_root.add_child(logo)
 
 func _create_hud() -> void:
 	hud_layer = CanvasLayer.new()
@@ -733,6 +823,10 @@ func _create_hud() -> void:
 	# 5. Game Over Panel (Modal)
 	game_over_panel = PanelContainer.new()
 	game_over_panel.set_anchors_preset(Control.PRESET_CENTER)
+	game_over_panel.offset_left = -200.0
+	game_over_panel.offset_top = -120.0
+	game_over_panel.offset_right = 200.0
+	game_over_panel.offset_bottom = 120.0
 	game_over_panel.custom_minimum_size = Vector2(400, 240)
 	game_over_panel.visible = false
 	root_control.add_child(game_over_panel)
@@ -772,6 +866,10 @@ func _create_hud() -> void:
 	# 6. Victory Panel (Modal)
 	victory_panel = PanelContainer.new()
 	victory_panel.set_anchors_preset(Control.PRESET_CENTER)
+	victory_panel.offset_left = -210.0
+	victory_panel.offset_top = -130.0
+	victory_panel.offset_right = 210.0
+	victory_panel.offset_bottom = 130.0
 	victory_panel.custom_minimum_size = Vector2(420, 260)
 	victory_panel.visible = false
 	root_control.add_child(victory_panel)
@@ -859,7 +957,7 @@ func _physics_process(_delta: float) -> void:
 			if collider != null:
 				var col_name = collider.name
 				var dmg = 0.0
-				if col_name.begins_with("Rock"):
+				if collider.is_in_group("river_damage_obstacle") or col_name.begins_with("Rock"):
 					dmg = 15.0
 				elif col_name.begins_with("Log"):
 					dmg = 10.0
@@ -874,8 +972,29 @@ func _physics_process(_delta: float) -> void:
 		if collided_obstacle:
 			damage_cooldown = 0.6 # Damage immunity window
 
+	# Fallback for low-speed contacts where CharacterBody3D does not report a
+	# slide collision reliably. This also makes damage work consistently on the
+	# authoritative host in multiplayer.
+	if damage_cooldown <= 0.0:
+		var obstacles := get_tree().get_nodes_in_group("river_damage_obstacle")
+		for obstacle in obstacles:
+			if is_instance_valid(obstacle) and boat.global_position.distance_to(obstacle.global_position) < 2.6:
+				var hit_damage := 10.0 if obstacle.name.begins_with("Log") else 15.0
+				_apply_damage(hit_damage, "Collided with %s!" % obstacle.name)
+				damage_cooldown = 0.6
+				break
+
 func _apply_damage(amount: float, reason: String) -> void:
-	boat_health = maxf(0.0, boat_health - amount)
+	var new_health = maxf(0.0, boat_health - amount)
+	_apply_damage_state(new_health, amount, reason)
+	# The host owns physics and damage. Mirror the resulting state so every
+	# player sees the flash, notification, hull value, and game-over panel at
+	# the same time.
+	if multiplayer != null and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		_sync_damage.rpc(new_health, amount, reason)
+
+func _apply_damage_state(new_health: float, amount: float, reason: String) -> void:
+	boat_health = new_health
 	shake_intensity = 0.45
 	if damage_flash_rect != null:
 		damage_flash_rect.color.a = 0.45
@@ -890,6 +1009,10 @@ func _apply_damage(amount: float, reason: String) -> void:
 
 	if boat_health <= 0.0:
 		_trigger_game_over()
+
+@rpc("authority", "call_remote", "reliable")
+func _sync_damage(new_health: float, amount: float, reason: String) -> void:
+	_apply_damage_state(new_health, amount, reason)
 
 func _on_boat_sync_row(_seat_a: int, _seat_b: int) -> void:
 	sync_combos += 1
