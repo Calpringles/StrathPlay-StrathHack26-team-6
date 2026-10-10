@@ -1,0 +1,26 @@
+[gd_resource type="ShaderMaterial" load_steps=4 format=3]
+
+[ext_resource type="Shader" path="res://SourceCode/shader/main.gdshader" id="1_sky"]
+[ext_resource type="Texture2D" path="res://SourceCode/textures/clouds/clouds_01.tres" id="2_clouds"]
+[ext_resource type="Texture2D" path="res://SourceCode/textures/clouds/clouds_02.tres" id="3_clouds"]
+
+[resource]
+shader = ExtResource("1_sky")
+shader_parameter/sky_day = Color(0.22, 0.51, 0.82, 1)
+shader_parameter/horizon_day = Color(0.76, 0.88, 0.94, 1)
+shader_parameter/horizon_sunset = Color(0.72, 0.82, 0.9, 1)
+shader_parameter/sky_sunset = Color(0.2, 0.43, 0.68, 1)
+shader_parameter/use_directional_light = true
+shader_parameter/cloud_tex_01 = ExtResource("2_clouds")
+shader_parameter/cloud_tex_02 = ExtResource("3_clouds")
+shader_parameter/cloud_color = Color(0.98, 0.99, 1, 1)
+shader_parameter/cloud_tiling = Vector2(2.2, 2.2)
+shader_parameter/wind_speed = Vector2(0.025, 0.012)
+shader_parameter/cloud_density = 0.85
+shader_parameter/cloud_depth = 2.0
+shader_parameter/cloud_shape_exponent = 1.2
+shader_parameter/night_noise_01 = ExtResource("2_clouds")
+shader_parameter/night_noise_02 = ExtResource("3_clouds")
+shader_parameter/sun_scale = 0.015
+shader_parameter/sun_strength = 2.0
+shader_parameter/sun_color = Color(1, 0.95, 0.8, 1)

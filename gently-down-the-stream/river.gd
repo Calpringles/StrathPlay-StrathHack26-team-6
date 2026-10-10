@@ -5,6 +5,11 @@ extends Node3D
 const RIVER_WIDTH: float = 18.0 # From X = -9.0 to +9.0
 const RIVER_LENGTH: float = 1000.0 # 1000 meters to finish line
 const OBSTACLE_SEED: int = 42819
+const WATERFALL_Z: float = -1018.0
+var victory_elapsed: float = 0.0
+var victory_start_x: float = 0.0
+var victory_title: Label
+var game_over_description: Label
 
 enum GameState { PLAYING, WON, SUNK }
 var game_state: GameState = GameState.PLAYING
@@ -51,7 +56,16 @@ func _ready() -> void:
 	_decorate_banks()
 	_create_start_banner()
 	_create_finish_line()
+	_create_waterfall()
 	_create_hud()
+	var flood = Node3D.new()
+	flood.name = "RiverChase"
+	flood.set_script(load("res://river_chase.gd"))
+	add_child(flood)
+	var hazards = Node3D.new()
+	hazards.name = "RiverHazards"
+	hazards.set_script(load("res://river_hazards.gd"))
+	add_child(hazards)
 
 	# Connect boat sync and damage events
 	if boat.has_signal("sync_row_achieved"):
@@ -62,13 +76,14 @@ func _ready() -> void:
 		cam_base_pos = camera.position
 
 func _create_environment() -> void:
-	# Add WorldEnvironment with river procedural sky/fog if not already present
+	# Use the imported cloud/sky package for a softly moving daylight sky.
 	var env_node: WorldEnvironment = get_node_or_null("WorldEnvironment")
 	if env_node == null:
 		env_node = WorldEnvironment.new()
 		env_node.name = "WorldEnvironment"
 		var env: Environment = Environment.new()
 		
+<<<<<<< Updated upstream
 		# Procedural daylight sky
 		var sky_mat: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
 		sky_mat.sky_top_color = Color("#466579")
@@ -77,8 +92,12 @@ func _create_environment() -> void:
 		sky_mat.ground_horizon_color = Color("#b2c0bd")
 		sky_mat.sun_angle_max = 18.0
 		sky_mat.sun_curve = 0.08
+=======
+>>>>>>> Stashed changes
 		var sky: Sky = Sky.new()
-		sky.sky_material = sky_mat
+		sky.sky_material = load("res://river_sky.tres")
+		sky.process_mode = Sky.PROCESS_MODE_REALTIME
+		sky.radiance_size = Sky.RADIANCE_SIZE_128
 		env.background_mode = Environment.BG_SKY
 		env.sky = sky
 
@@ -86,10 +105,18 @@ func _create_environment() -> void:
 		env.ambient_light_energy = 0.58
 		env.tonemap_mode = Environment.TONE_MAPPER_ACES
 		env.fog_enabled = true
+<<<<<<< Updated upstream
 		env.fog_light_color = Color("#9fc9d0")
 		env.fog_density = 0.0012
 		env.fog_height = 2.0
 		env.fog_height_density = 0.018
+=======
+		env.fog_light_color = Color(0.70, 0.82, 0.88, 1.0)
+		env.fog_density = 0.002
+		# Fog may soften distant scenery without replacing the cloud sky.
+		env.fog_sky_affect = 0.0
+		env_node.environment = env
+>>>>>>> Stashed changes
 		add_child(env_node)
 	if env_node.environment == null:
 		env_node.environment = Environment.new()
@@ -129,7 +156,7 @@ func _create_river_bed_and_water() -> void:
 	var water_mesh_inst: MeshInstance3D = MeshInstance3D.new()
 	water_mesh_inst.name = "RiverWater"
 	var water_plane: PlaneMesh = PlaneMesh.new()
-	water_plane.size = Vector2(RIVER_WIDTH, RIVER_LENGTH + 200.0)
+	water_plane.size = Vector2(RIVER_WIDTH, 100.0 - WATERFALL_Z)
 	water_plane.subdivide_width = 16
 	water_plane.subdivide_depth = 160
 	water_mesh_inst.mesh = water_plane
@@ -184,21 +211,21 @@ func _create_river_bed_and_water() -> void:
 		water_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		water_mesh_inst.material_override = water_mat
 
-	water_mesh_inst.position = Vector3(0.0, 0.0, -(RIVER_LENGTH / 2.0))
+	water_mesh_inst.position = Vector3(0.0, 0.0, (100.0 + WATERFALL_Z) / 2.0)
 	add_child(water_mesh_inst)
 
 	# 2. River Bed (bottom under water)
 	var bed_mesh_inst: MeshInstance3D = MeshInstance3D.new()
 	bed_mesh_inst.name = "RiverBed"
 	var bed_plane: PlaneMesh = PlaneMesh.new()
-	bed_plane.size = Vector2(RIVER_WIDTH + 2.0, RIVER_LENGTH + 200.0)
+	bed_plane.size = Vector2(RIVER_WIDTH + 2.0, 100.0 - WATERFALL_Z)
 	bed_mesh_inst.mesh = bed_plane
 
 	var bed_mat: StandardMaterial3D = StandardMaterial3D.new()
 	bed_mat.albedo_color = Color("#2a3b2c") # Dark mossy river bottom
 	bed_mat.roughness = 0.95
 	bed_mesh_inst.material_override = bed_mat
-	bed_mesh_inst.position = Vector3(0.0, -1.8, -(RIVER_LENGTH / 2.0))
+	bed_mesh_inst.position = Vector3(0.0, -1.8, (100.0 + WATERFALL_Z) / 2.0)
 	add_child(bed_mesh_inst)
 
 # Mathematical terrain height function so trees, props, and ground mesh share the EXACT same elevation
@@ -221,7 +248,7 @@ func _create_river_banks() -> void:
 	const TERRAIN_WIDTH: float = 250.0          # 250m of flat grassland on each side
 	const TERRAIN_X_STEPS: int = 8
 	const TERRAIN_Z_STEPS: int = 80
-	var z_total_len: float = RIVER_LENGTH + 300.0
+	var z_total_len: float = 50.0 - WATERFALL_Z
 
 	# 1. Low shoreline collision boundary so the boat physically stays contained in the river
 	var bank_thickness: float = 4.0
@@ -229,7 +256,7 @@ func _create_river_banks() -> void:
 	for side in [-1.0, 1.0]:
 		var bank_body: StaticBody3D = StaticBody3D.new()
 		bank_body.name = "Bank_Collider_Left" if side < 0 else "Bank_Collider_Right"
-		bank_body.position = Vector3(side * (bank_half_x + bank_thickness / 2.0), 0.0, -(RIVER_LENGTH / 2.0))
+		bank_body.position = Vector3(side * (bank_half_x + bank_thickness / 2.0), 0.0, (50.0 + WATERFALL_Z) / 2.0)
 		add_child(bank_body)
 
 		var col: CollisionShape3D = CollisionShape3D.new()
@@ -305,7 +332,7 @@ func _create_river_banks() -> void:
 		flat_ground.position = Vector3(
 			side * (bank_half_x + TERRAIN_WIDTH * 0.5),
 			0.0,
-			-(RIVER_LENGTH / 2.0)
+			(50.0 + WATERFALL_Z) / 2.0
 		)
 		add_child(flat_ground)
 
@@ -636,7 +663,7 @@ func _create_finish_line() -> void:
 	# Banner
 	var banner: MeshInstance3D = MeshInstance3D.new()
 	var ban_mesh: BoxMesh = BoxMesh.new()
-	ban_mesh.size = Vector3(12.0, 1.4, 0.1)
+	ban_mesh.size = Vector3(15.0, 2.0, 0.1)
 	banner.mesh = ban_mesh
 	banner.material_override = banner_mat
 	banner.position = Vector3(0.0, 5.8, 0.0)
@@ -644,8 +671,13 @@ func _create_finish_line() -> void:
 
 	# 3D Label
 	var finish_lbl: Label3D = Label3D.new()
-	finish_lbl.text = "★ CALM WATERS - SAFE HARBOR ★\nFINISH LINE"
-	finish_lbl.font_size = 36
+	finish_lbl.text = "Congratulations!"
+	finish_lbl.font_size = 96
+	finish_lbl.pixel_size = 0.008
+	var bold_font = SystemFont.new()
+	bold_font.font_names = PackedStringArray(["Arial", "Noto Sans"])
+	bold_font.font_weight = 800
+	finish_lbl.font = bold_font
 	finish_lbl.modulate = Color(0.1, 0.1, 0.1)
 	finish_lbl.position = Vector3(0.0, 5.8, 0.08)
 	finish_node.add_child(finish_lbl)
@@ -843,6 +875,7 @@ func _create_hud() -> void:
 	go_vbox.add_child(go_title)
 
 	var go_desc = Label.new()
+	game_over_description = go_desc
 	go_desc.text = "The boat took too much hull damage in the river.\nCoordinate your rowing calls to steer around obstacles!"
 	go_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	go_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -855,6 +888,7 @@ func _create_hud() -> void:
 
 	var retry_btn = Button.new()
 	retry_btn.text = "Retry River"
+	retry_btn.disabled = not _is_game_authority()
 	retry_btn.pressed.connect(_on_retry_pressed)
 	go_btn_row.add_child(retry_btn)
 
@@ -865,12 +899,31 @@ func _create_hud() -> void:
 
 	# 6. Victory Panel (Modal)
 	victory_panel = PanelContainer.new()
+<<<<<<< Updated upstream
 	victory_panel.set_anchors_preset(Control.PRESET_CENTER)
 	victory_panel.offset_left = -210.0
 	victory_panel.offset_top = -130.0
 	victory_panel.offset_right = 210.0
 	victory_panel.offset_bottom = 130.0
 	victory_panel.custom_minimum_size = Vector2(420, 260)
+=======
+	victory_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	victory_panel.offset_left = -330
+	victory_panel.offset_right = 330
+	victory_panel.offset_top = 88
+	victory_panel.offset_bottom = 250
+	victory_panel.custom_minimum_size = Vector2(660, 162)
+	var celebration_style = StyleBoxFlat.new()
+	celebration_style.bg_color = Color(0.025, 0.09, 0.15, 0.92)
+	celebration_style.border_color = Color(1, 0.8, 0.2)
+	celebration_style.set_border_width_all(3)
+	celebration_style.set_corner_radius_all(20)
+	celebration_style.content_margin_left = 24
+	celebration_style.content_margin_right = 24
+	celebration_style.content_margin_top = 18
+	celebration_style.content_margin_bottom = 18
+	victory_panel.add_theme_stylebox_override("panel", celebration_style)
+>>>>>>> Stashed changes
 	victory_panel.visible = false
 	root_control.add_child(victory_panel)
 
@@ -879,16 +932,18 @@ func _create_hud() -> void:
 	victory_panel.add_child(vic_vbox)
 
 	var vic_title = Label.new()
-	vic_title.text = "RIVER CONQUERED!"
+	vic_title.text = "Congratulations!"
 	vic_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vic_title.add_theme_font_size_override("font_size", 34)
+	vic_title.add_theme_font_size_override("font_size", 54)
+	var bold_font = SystemFont.new()
+	bold_font.font_names = PackedStringArray(["Arial", "Noto Sans"])
+	bold_font.font_weight = 800
+	vic_title.add_theme_font_override("font", bold_font)
+	vic_title.add_theme_color_override("font_outline_color", Color(0.2, 0.1, 0.0))
+	vic_title.add_theme_constant_override("outline_size", 3)
+	victory_title = vic_title
 	vic_title.modulate = Color(1.0, 0.85, 0.2)
 	vic_vbox.add_child(vic_title)
-
-	var vic_desc = Label.new()
-	vic_desc.text = "You reached the safe harbor!\nGreat communication and teamwork on the oars."
-	vic_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vic_vbox.add_child(vic_desc)
 
 	var vic_btn_row = HBoxContainer.new()
 	vic_btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -897,6 +952,7 @@ func _create_hud() -> void:
 
 	var play_again_btn = Button.new()
 	play_again_btn.text = "Play Again"
+	play_again_btn.disabled = not _is_game_authority()
 	play_again_btn.pressed.connect(_on_retry_pressed)
 	vic_btn_row.add_child(play_again_btn)
 
@@ -906,6 +962,8 @@ func _create_hud() -> void:
 	vic_btn_row.add_child(vic_lobby_btn)
 
 func _process(delta: float) -> void:
+	if game_state == GameState.WON:
+		_update_victory_ending(delta)
 	if game_state == GameState.PLAYING:
 		elapsed_time += delta
 		damage_cooldown = maxf(0.0, damage_cooldown - delta)
@@ -915,7 +973,7 @@ func _process(delta: float) -> void:
 			distance_traveled = clampf(-boat.global_position.z, 0.0, RIVER_LENGTH)
 
 			# Check Win Condition
-			if -boat.global_position.z >= RIVER_LENGTH:
+			if -boat.global_position.z >= RIVER_LENGTH and _is_game_authority():
 				_trigger_victory()
 
 		# Update UI
@@ -945,7 +1003,7 @@ func _process(delta: float) -> void:
 			notification_banner.visible = false
 
 func _physics_process(_delta: float) -> void:
-	if game_state != GameState.PLAYING or boat == null:
+	if game_state != GameState.PLAYING or boat == null or not _is_game_authority():
 		return
 
 	# Check boat collisions for damage
@@ -963,6 +1021,8 @@ func _physics_process(_delta: float) -> void:
 					dmg = 10.0
 				elif col_name.begins_with("Bank"):
 					dmg = 6.0
+				elif col_name.begins_with("FallingTree"):
+					dmg = 18.0
 
 				if dmg > 0.0:
 					_apply_damage(dmg, "Collided with %s!" % col_name)
@@ -1010,9 +1070,14 @@ func _apply_damage_state(new_health: float, amount: float, reason: String) -> vo
 	if boat_health <= 0.0:
 		_trigger_game_over()
 
+<<<<<<< Updated upstream
 @rpc("authority", "call_remote", "reliable")
 func _sync_damage(new_health: float, amount: float, reason: String) -> void:
 	_apply_damage_state(new_health, amount, reason)
+=======
+func _is_game_authority() -> bool:
+	return not NetworkManager.is_connection_ready() or multiplayer.is_server()
+>>>>>>> Stashed changes
 
 func _on_boat_sync_row(_seat_a: int, _seat_b: int) -> void:
 	sync_combos += 1
@@ -1040,8 +1105,10 @@ func _update_hud(_delta: float) -> void:
 	if health_label != null:
 		health_label.text = " %d%%" % int(boat_health)
 
-func _trigger_game_over() -> void:
+func _trigger_game_over(reason: String = "The boat took too much hull damage in the river.\nCoordinate your rowing calls to steer around obstacles!") -> void:
 	game_state = GameState.SUNK
+	if game_over_description != null:
+		game_over_description.text = reason
 	shake_intensity = 0.8
 	if game_over_panel != null:
 		game_over_panel.visible = true
@@ -1051,13 +1118,99 @@ func _trigger_game_over() -> void:
 		boat.current_speed = 0.0
 
 func _trigger_victory() -> void:
+	if game_state == GameState.WON:
+		return
 	game_state = GameState.WON
+	victory_elapsed = 0.0
+	victory_start_x = boat.position.x
 	if victory_panel != null:
 		victory_panel.visible = true
+		victory_panel.pivot_offset = victory_panel.size / 2.0
+		victory_panel.scale = Vector2(0.72, 0.72)
+		victory_panel.modulate.a = 0.0
+		var entrance = create_tween().set_parallel(true)
+		entrance.tween_property(victory_panel, "scale", Vector2.ONE, 0.7).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		entrance.tween_property(victory_panel, "modulate:a", 1.0, 0.45)
+		var pulse = create_tween().set_loops()
+		pulse.tween_property(victory_title, "modulate", Color(1, 0.98, 0.7), 0.8)
+		pulse.tween_property(victory_title, "modulate", Color(1, 0.85, 0.2), 0.8)
 	if boat != null:
-		boat.current_speed = 0.5
+		boat.current_speed = 0.0
+		boat.velocity = Vector3.ZERO
+	# Detach the camera so the boat can tumble without rolling the view.
+	camera.set_as_top_level(true)
+	camera.global_position = Vector3(16, 10, WATERFALL_Z + 15)
+	camera.look_at(Vector3(0, -5, WATERFALL_Z - 5), Vector3.UP)
+	cam_base_pos = camera.position
+	var chase = get_node_or_null("RiverChase")
+	if chase != null:
+		chase.hide_chase_ui()
+
+func _update_victory_ending(delta: float) -> void:
+	victory_elapsed += delta
+	var travel = minf(victory_elapsed * 6.0, 44.0)
+	boat.position.x = lerpf(victory_start_x, 0.0, clampf(victory_elapsed / 3.0, 0.0, 1.0))
+	boat.position.z = -RIVER_LENGTH - travel
+	var fall_time = maxf(0.0, victory_elapsed - 3.0)
+	boat.position.y = maxf(-17.8, 0.2 - 3.5 * fall_time * fall_time)
+	boat.rotation.x = lerpf(boat.rotation.x, deg_to_rad(-65.0) if boat.position.y > -17.7 and fall_time > 0.0 else 0.0, minf(1.0, delta * 3.0))
+	boat.rotation.y = lerp_angle(boat.rotation.y, 0.0, minf(1.0, delta * 2.0))
+
+func _create_waterfall() -> void:
+	var falls = MeshInstance3D.new()
+	falls.name = "FinishWaterfall"
+	var curtain = PlaneMesh.new()
+	curtain.size = Vector2(RIVER_WIDTH, 18.0)
+	curtain.subdivide_width = 32
+	curtain.subdivide_depth = 32
+	falls.mesh = curtain
+	falls.rotation_degrees.x = 90
+	falls.position = Vector3(0, -9, WATERFALL_Z)
+	var waterfall_material = ShaderMaterial.new()
+	waterfall_material.shader = load("res://waterfall.gdshader")
+	falls.material_override = waterfall_material
+	add_child(falls)
+	var pool = MeshInstance3D.new()
+	pool.name = "WaterfallPool"
+	var pool_mesh = PlaneMesh.new()
+	pool_mesh.size = Vector2(90, 100)
+	pool.mesh = pool_mesh
+	pool.position = Vector3(0, -18, WATERFALL_Z - 50)
+	pool.material_override = get_node("RiverWater").material_override
+	add_child(pool)
+	var cliff_material = StandardMaterial3D.new()
+	cliff_material.albedo_color = Color(0.23, 0.28, 0.25)
+	cliff_material.roughness = 1.0
+	for side in [-1, 1]:
+		var cliff = MeshInstance3D.new()
+		var cliff_mesh = BoxMesh.new()
+		cliff_mesh.size = Vector3(250, 18, 8)
+		cliff.mesh = cliff_mesh
+		cliff.material_override = cliff_material
+		cliff.position = Vector3(side * 134.0, -9, WATERFALL_Z + 4)
+		add_child(cliff)
+	var foam = MeshInstance3D.new()
+	var foam_mesh = TorusMesh.new()
+	foam_mesh.inner_radius = 3.5
+	foam_mesh.outer_radius = 4.5
+	foam.mesh = foam_mesh
+	foam.scale = Vector3(2, 0.2, 0.6)
+	foam.position = Vector3(0, -17.8, WATERFALL_Z - 2)
+	var foam_material = StandardMaterial3D.new()
+	foam_material.albedo_color = Color(0.9, 0.98, 1)
+	foam.material_override = foam_material
+	add_child(foam)
 
 func _on_retry_pressed() -> void:
+	if not _is_game_authority():
+		return
+	if NetworkManager.is_connection_ready():
+		_restart_river.rpc()
+	else:
+		_restart_river()
+
+@rpc("authority", "call_local", "reliable")
+func _restart_river() -> void:
 	get_tree().reload_current_scene()
 
 func _on_return_to_lobby_pressed() -> void:

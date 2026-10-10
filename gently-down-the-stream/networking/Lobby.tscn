@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://df6qm87r1x420"]
 
-[ext_resource type="Script" path="res://networking/Lobby.gd" id="1_lobby"]
+[ext_resource type="Script" uid="uid://dhg8ulwnf8c1v" path="res://networking/Lobby.gd" id="1_lobby"]
 
-[node name="Lobby" type="Control"]
+[node name="Lobby" type="Control" unique_id=1137948791]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,7 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_lobby")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=494268703]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +20,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0941176, 0.145098, 0.207843, 1)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1151034521]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,416 +28,416 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ConnectPanel" type="PanelContainer" parent="CenterContainer"]
+[node name="ConnectPanel" type="PanelContainer" parent="CenterContainer" unique_id=1563888097]
 custom_minimum_size = Vector2(440, 360)
 layout_mode = 2
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/ConnectPanel"]
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/ConnectPanel" unique_id=653768950]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="Title" type="Label" parent="CenterContainer/ConnectPanel/VBox" unique_id=1480651295]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Gently Down The Stream"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="Subtitle" type="Label" parent="CenterContainer/ConnectPanel/VBox" unique_id=1092602636]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Co-op Multiplayer Lobby"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/ConnectPanel/VBox" unique_id=2021196219]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="NameLabel" type="Label" parent="CenterContainer/ConnectPanel/VBox" unique_id=401053412]
 layout_mode = 2
 text = "Your Display Name:"
 
-[node name="NameInput" type="LineEdit" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="NameInput" type="LineEdit" parent="CenterContainer/ConnectPanel/VBox" unique_id=1596940885]
 layout_mode = 2
 placeholder_text = "Enter your Discord / player name"
 
-[node name="IPLabel" type="Label" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="IPLabel" type="Label" parent="CenterContainer/ConnectPanel/VBox" unique_id=1363784230]
 layout_mode = 2
 text = "Host IP Address (To Join):"
 
-[node name="IPInput" type="LineEdit" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="IPInput" type="LineEdit" parent="CenterContainer/ConnectPanel/VBox" unique_id=1628072730]
 layout_mode = 2
 text = "127.0.0.1"
 placeholder_text = "e.g. 192.168.1.50 or 127.0.0.1"
 
-[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/ConnectPanel/VBox" unique_id=626472459]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="HostButton" type="Button" parent="CenterContainer/ConnectPanel/VBox/ButtonRow"]
+[node name="HostButton" type="Button" parent="CenterContainer/ConnectPanel/VBox/ButtonRow" unique_id=1693994558]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Host Online Game"
 
-[node name="JoinButton" type="Button" parent="CenterContainer/ConnectPanel/VBox/ButtonRow"]
+[node name="JoinButton" type="Button" parent="CenterContainer/ConnectPanel/VBox/ButtonRow" unique_id=1648715537]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Join Game"
 
-[node name="StatusLabel" type="Label" parent="CenterContainer/ConnectPanel/VBox"]
+[node name="StatusLabel" type="Label" parent="CenterContainer/ConnectPanel/VBox" unique_id=651706869]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.960784, 0.709804, 0.329412, 1)
 horizontal_alignment = 1
 
-[node name="RoomPanel" type="PanelContainer" parent="CenterContainer"]
+[node name="RoomPanel" type="PanelContainer" parent="CenterContainer" unique_id=1912587676]
 visible = false
 custom_minimum_size = Vector2(920, 580)
 layout_mode = 2
 
-[node name="MainHBox" type="HBoxContainer" parent="CenterContainer/RoomPanel"]
+[node name="MainHBox" type="HBoxContainer" parent="CenterContainer/RoomPanel" unique_id=1954306873]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="LeftVBox" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox"]
+[node name="LeftVBox" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox" unique_id=832412070]
 custom_minimum_size = Vector2(450, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="RoomTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="RoomTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=948121161]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Boat Staging Lobby"
 horizontal_alignment = 1
 
-[node name="IPInfoBox" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="IPInfoBox" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1192329544]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="LocalIPLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox"]
+[node name="LocalIPLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox" unique_id=1514008671]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.4, 0.85, 0.55, 1)
 text = "LAN IP: 127.0.0.1"
 
-[node name="CopyIPButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox"]
+[node name="CopyIPButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox" unique_id=245494978]
 layout_mode = 2
 text = "Copy IP"
 
-[node name="HSeparator1" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="HSeparator1" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1675670655]
 layout_mode = 2
 
-[node name="PlayerListHeader" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="PlayerListHeader" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1149729431]
 layout_mode = 2
 text = "Connected Players in Boat:"
 
-[node name="PlayerListScroll" type="ScrollContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="PlayerListScroll" type="ScrollContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1340052124]
 custom_minimum_size = Vector2(0, 95)
 layout_mode = 2
 
-[node name="PlayerList" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/PlayerListScroll"]
+[node name="PlayerList" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/PlayerListScroll" unique_id=254235435]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator2" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1601597705]
 layout_mode = 2
 
-[node name="SeatHeader" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="SeatHeader" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1788685735]
 layout_mode = 2
 text = "Choose Your Oar / Seat Position:"
 
-[node name="SeatGrid" type="GridContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="SeatGrid" type="GridContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=889667749]
 layout_mode = 2
 columns = 2
 
-[node name="Seat0" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+[node name="Seat0" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid" unique_id=1539968121]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Front-Left Oar"
 
-[node name="Seat1" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+[node name="Seat1" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid" unique_id=1097580138]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Front-Right Oar"
 
-[node name="Seat2" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+[node name="Seat2" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid" unique_id=1196947912]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Mid-Left Oar"
 
-[node name="Seat3" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+[node name="Seat3" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid" unique_id=1791434522]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Mid-Right Oar"
 
-[node name="Seat4" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+[node name="Seat4" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid" unique_id=499898631]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Back-Left Oar"
 
-[node name="Seat5" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+[node name="Seat5" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid" unique_id=1736488664]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Back-Right Oar"
 
-[node name="HSeparator3" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1465446900]
 layout_mode = 2
 
-[node name="ControlRow" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+[node name="ControlRow" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox" unique_id=1899861101]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="LeaveRoomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow"]
+[node name="LeaveRoomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow" unique_id=37996215]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Leave Room"
 
-[node name="StartGameButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow"]
+[node name="StartGameButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow" unique_id=251958222]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 1)
 text = "Start Game (Host Only)"
 
-[node name="VSeparator" type="VSeparator" parent="CenterContainer/RoomPanel/MainHBox"]
+[node name="VSeparator" type="VSeparator" parent="CenterContainer/RoomPanel/MainHBox" unique_id=1836695105]
 layout_mode = 2
 
-[node name="CustomizationVBox" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox"]
+[node name="CustomizationVBox" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox" unique_id=1194111933]
 custom_minimum_size = Vector2(390, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="CustomTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+[node name="CustomTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox" unique_id=1404523488]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "🎨 Customise Your Rower"
 horizontal_alignment = 1
 
-[node name="PreviewCenter" type="CenterContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+[node name="PreviewCenter" type="CenterContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox" unique_id=508437605]
 layout_mode = 2
 
-[node name="PreviewContainer" type="SubViewportContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter"]
+[node name="PreviewContainer" type="SubViewportContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter" unique_id=267860364]
 custom_minimum_size = Vector2(300, 200)
 layout_mode = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer"]
+[node name="SubViewport" type="SubViewport" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer" unique_id=1072738709]
 own_world_3d = true
 handle_input_locally = false
 size = Vector2i(300, 200)
-render_target_update_mode = 3
+render_target_update_mode = 0
 
-[node name="Camera3D" type="Camera3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport"]
+[node name="Camera3D" type="Camera3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport" unique_id=141281251]
 transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.65, 1.35)
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport" unique_id=529069497]
 transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 2, 2)
 
-[node name="RotationControls" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+[node name="RotationControls" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox" unique_id=639636727]
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="RotateLeft" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls"]
+[node name="RotateLeft" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls" unique_id=320221933]
 custom_minimum_size = Vector2(44, 32)
 layout_mode = 2
 tooltip_text = "Turn character left"
 text = "←"
 
-[node name="RotationLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls"]
+[node name="RotationLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls" unique_id=448007363]
 layout_mode = 2
 text = "Turn character"
 
-[node name="RotateRight" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls"]
+[node name="RotateRight" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/RotationControls" unique_id=474650074]
 custom_minimum_size = Vector2(44, 32)
 layout_mode = 2
 tooltip_text = "Turn character right"
 text = "→"
 
-[node name="RandomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+[node name="RandomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox" unique_id=589419945]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 text = "🎲 Randomise Avatar"
 
-[node name="OptionsGrid" type="GridContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+[node name="OptionsGrid" type="GridContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox" unique_id=206646124]
 layout_mode = 2
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 6
 columns = 2
 
-[node name="EyesTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="EyesTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=1770969024]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Eyes:"
 
-[node name="EyesControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="EyesControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=472308798]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl" unique_id=468275924]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl"]
+[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl" unique_id=105299979]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Normal"
 horizontal_alignment = 1
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl" unique_id=730463637]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"
 
-[node name="MouthTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="MouthTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=1601309944]
 layout_mode = 2
 text = "Mouth:"
 
-[node name="MouthControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="MouthControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=1780668382]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl" unique_id=596245155]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl"]
+[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl" unique_id=1789110244]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Smile :)"
 horizontal_alignment = 1
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl" unique_id=702059361]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"
 
-[node name="HatTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="HatTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=1435584349]
 layout_mode = 2
 text = "Hat:"
 
-[node name="HatControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="HatControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=28041757]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl" unique_id=652683438]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl"]
+[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl" unique_id=506157674]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "None"
 horizontal_alignment = 1
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl" unique_id=74802348]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"
 
-[node name="SkinTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="SkinTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=1758047495]
 layout_mode = 2
 text = "Skin Color:"
 
-[node name="SkinControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="SkinControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=81636342]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl" unique_id=131199626]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl"]
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl" unique_id=670779864]
 custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 color = Color(0.878431, 0.67451, 0.411765, 1)
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl" unique_id=1596532058]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"
 
-[node name="ShirtTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="ShirtTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=608336156]
 layout_mode = 2
 text = "Shirt Color:"
 
-[node name="ShirtControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="ShirtControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=1009142191]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl" unique_id=2035519121]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl"]
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl" unique_id=1664968073]
 custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 color = Color(0.905882, 0.298039, 0.235294, 1)
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl" unique_id=1081754100]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"
 
-[node name="PantsTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="PantsTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=884688431]
 layout_mode = 2
 text = "Pants Color:"
 
-[node name="PantsControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="PantsControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=237318085]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl" unique_id=621002988]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl"]
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl" unique_id=1296123140]
 custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 color = Color(0.203922, 0.286275, 0.368627, 1)
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl" unique_id=2015335370]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"
 
-[node name="HatColTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="HatColTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=302067205]
 layout_mode = 2
 text = "Hat Color:"
 
-[node name="HatColorControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+[node name="HatColorControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid" unique_id=507864591]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl"]
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl" unique_id=753194792]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = "<"
 
-[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl"]
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl" unique_id=548755594]
 custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 color = Color(0.905882, 0.298039, 0.235294, 1)
 
-[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl"]
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl" unique_id=1027785758]
 custom_minimum_size = Vector2(32, 28)
 layout_mode = 2
 text = ">"

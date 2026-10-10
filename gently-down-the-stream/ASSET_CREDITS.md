@@ -1,0 +1,1 @@
+The crocodile model is based on [Stylized low poly Crocodile](https://sketchfab.com/3d-models/stylized-low-poly-crocodile-c23a11c350d44a4596af9d61f1675e05) by [Duc Tran](https://sketchfab.com/anhductran), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

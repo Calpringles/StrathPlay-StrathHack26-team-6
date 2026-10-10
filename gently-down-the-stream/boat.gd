@@ -13,7 +13,7 @@ signal sync_row_achieved(seat_a: int, seat_b: int)
 @export_group("Rowing Physics")
 @export var stroke_power: float = 2.4
 @export var turn_power: float = 0.45
-@export var current_speed: float = 0.0
+@export var current_speed: float = 0.8
 @export var water_drag_longitudinal: float = 0.65
 @export var water_drag_lateral: float = 3.6
 @export var turn_drag: float = 2.8
@@ -69,6 +69,7 @@ const SEAT_COLORS: Array[Color] = [
 var turn_speed: float = 0.0
 var visual_tilt: Vector3 = Vector3.ZERO
 var ambient_timer: float = 0.0
+var water_turbulence: float = 0.0
 
 var oars: Array[Node3D] = []
 var rowers: Array[Node3D] = []
@@ -103,7 +104,7 @@ func _ready() -> void:
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 
 	# Clean up any legacy placeholder oar nodes
-	for old_name in ["LeftOar", "RightOar", "Oars", "BoatVisual", "Hull"]:
+	for old_name in ["LeftOar", "RightOar", "Oars", "BoatVisual", "Hull", "Wood_BoatV1"]:
 		var old_node: Node = get_node_or_null(NodePath(old_name))
 		if old_node != null:
 			remove_child(old_node)
@@ -423,6 +424,9 @@ func _physics_process(delta: float) -> void:
 		stroke_timers[index] = maxf(0.0, stroke_timers[index] - delta)
 
 	# Handle input for local player
+	if get_parent().get("game_state") != null and get_parent().game_state != 0:
+		velocity = Vector3.ZERO
+		return
 	_handle_local_input()
 
 	# Physics simulation (server authority or local offline)
@@ -547,6 +551,9 @@ func _process_boat_physics(delta: float) -> void:
 
 	velocity = current_vel + (global_transform.basis * local_rel_vel)
 	velocity.y = 0.0
+	var hazards = get_parent().get_node_or_null("RiverHazards")
+	if hazards != null:
+		hazards.apply_whirlpool_forces(delta)
 
 	# 3. Angular turning with hydrodynamic resistance
 	rotate_y(turn_speed * delta)
@@ -642,9 +649,9 @@ func _update_visuals(delta: float) -> void:
 		var target_pitch = clampf(-velocity.length() * 0.015, -0.05, 0.05) # Bow lifts on acceleration
 
 		# Ambient river water rocking
-		var wave_roll = sin(ambient_timer * 2.2) * 0.02
-		var wave_pitch = cos(ambient_timer * 1.8) * 0.015
-		var wave_heave = sin(ambient_timer * 3.0) * 0.025
+		var wave_roll = sin(ambient_timer * 2.2) * 0.02 + sin(ambient_timer * 8.0) * water_turbulence * 0.07
+		var wave_pitch = cos(ambient_timer * 1.8) * 0.015 + cos(ambient_timer * 6.5) * water_turbulence * 0.04
+		var wave_heave = sin(ambient_timer * 3.0) * 0.025 + sin(ambient_timer * 9.0) * water_turbulence * 0.045
 
 		visual_tilt.x = lerpf(visual_tilt.x, target_pitch + wave_pitch, 8.0 * delta)
 		visual_tilt.z = lerpf(visual_tilt.z, target_roll + wave_roll, 8.0 * delta)
