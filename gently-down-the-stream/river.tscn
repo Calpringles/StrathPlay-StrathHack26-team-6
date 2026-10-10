@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://s718qvlsqvcr"]
+
+[node name="River" type="Node3D" unique_id=403142012]
+
+[node name="Boat" type="CharacterBody3D" parent="." unique_id=1578196858]
+
+[node name="Hull" type="MeshInstance3D" parent="Boat" unique_id=1913718613]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Boat" unique_id=1432688499]
+
+[node name="LeftOar" type="Node3D" parent="Boat" unique_id=1595344314]
+
+[node name="LeftMesh" type="MeshInstance3D" parent="Boat/LeftOar" unique_id=34276144]
+
+[node name="RightOar" type="Node3D" parent="Boat" unique_id=1894513957]
+
+[node name="RightMesh" type="MeshInstance3D" parent="Boat/RightOar" unique_id=1206524161]
+
+[node name="Camera3D" type="Camera3D" parent="Boat" unique_id=829280766]
+
+[node name="LeftBank" type="MeshInstance3D" parent="." unique_id=250011009]
+
+[node name="RightBank" type="MeshInstance3D" parent="." unique_id=2104837951]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1718612270]
