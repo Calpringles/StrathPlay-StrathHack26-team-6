@@ -1,8 +1,12 @@
 [gd_scene format=3 uid="uid://s718qvlsqvcr"]
 
+[ext_resource type="Script" uid="uid://c6fmclc4hac0c" path="res://boat.gd" id="1_gqjxk"]
+
 [node name="River" type="Node3D" unique_id=403142012]
 
 [node name="Boat" type="CharacterBody3D" parent="." unique_id=1578196858]
+transform = Transform3D(0.9370388, 0.26629686, -0.22592999, -0.16430779, 0.90704656, 0.38764608, 0.30815795, -0.32611734, 0.8936924, 0, 0, 0)
+script = ExtResource("1_gqjxk")
 
 [node name="Hull" type="MeshInstance3D" parent="Boat" unique_id=1913718613]
 
