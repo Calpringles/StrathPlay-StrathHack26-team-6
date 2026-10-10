@@ -35,7 +35,7 @@ const SEAT_NAMES = [
 	"Mid-Left Oar", "Mid-Right Oar",
 	"Back-Left Oar", "Back-Right Oar"
 ]
-const TARGET_GAME_SCENE = "res://networking/DummyGame.tscn"
+const TARGET_GAME_SCENE = "res://river.tscn"
 
 func _ready() -> void:
 	connect_panel.visible = true

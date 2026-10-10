@@ -1,11 +1,12 @@
 [gd_scene format=3 uid="uid://s718qvlsqvcr"]
 
 [ext_resource type="Script" uid="uid://c6fmclc4hac0c" path="res://boat.gd" id="1_gqjxk"]
+[ext_resource type="Script" uid="uid://bc6c3ucrw1mef" path="res://seats.gd" id="2_iiml5"]
+[ext_resource type="PackedScene" uid="uid://un4p8wna6dt6" path="res://boatassets/Wood_BoatV1.fbx" id="3_5iwgs"]
 
 [node name="River" type="Node3D" unique_id=403142012]
 
 [node name="Boat" type="CharacterBody3D" parent="." unique_id=1578196858]
-transform = Transform3D(0.9370388, 0.26629686, -0.22592999, -0.16430779, 0.90704656, 0.38764608, 0.30815795, -0.32611734, 0.8936924, 0, 0, 0)
 script = ExtResource("1_gqjxk")
 
 [node name="Hull" type="MeshInstance3D" parent="Boat" unique_id=1913718613]
@@ -21,9 +22,16 @@ script = ExtResource("1_gqjxk")
 [node name="RightMesh" type="MeshInstance3D" parent="Boat/RightOar" unique_id=1206524161]
 
 [node name="Camera3D" type="Camera3D" parent="Boat" unique_id=829280766]
+transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 3.5, 5.2)
+
+[node name="Seats" type="Node3D" parent="Boat" unique_id=1831033934]
+script = ExtResource("2_iiml5")
 
 [node name="LeftBank" type="MeshInstance3D" parent="." unique_id=250011009]
 
 [node name="RightBank" type="MeshInstance3D" parent="." unique_id=2104837951]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1718612270]
+
+[node name="Wood_BoatV1" parent="." unique_id=437240606 instance=ExtResource("3_5iwgs")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.31609845, 0, 3.327115)
