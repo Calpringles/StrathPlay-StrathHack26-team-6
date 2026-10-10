@@ -264,6 +264,8 @@ func _on_seat_selected(seat_index: int) -> void:
 		NetworkManager.request_seat.rpc_id(1, seat_index)
 
 func _update_room_ui() -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null:
+		return
 	var is_server = multiplayer.is_server()
 	var my_id = multiplayer.get_unique_id()
 	room_title.text = "Boat Staging Lobby (%s)" % ("HOST" if is_server else "CONNECTED CLIENT")
@@ -335,6 +337,8 @@ func _on_leave_pressed() -> void:
 	connect_status_label.text = "Disconnected."
 
 func _on_connection_failed() -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
 	connect_panel.visible = true
 	room_panel.visible = false
 	connect_status_label.text = "Could not connect. Check the host IP and Windows Firewall."
@@ -343,6 +347,23 @@ func _on_connection_failed() -> void:
 	connect_panel.visible = true
 
 func _on_server_disconnected() -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
 	connect_status_label.text = "Host closed the server."
 	room_panel.visible = false
 	connect_panel.visible = true
+
+func _exit_tree() -> void:
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager == null:
+		return
+	var connections = {
+		"player_list_updated": _update_room_ui,
+		"connection_ready": _on_network_ready,
+		"connection_failed": _on_connection_failed,
+		"server_disconnected": _on_server_disconnected
+	}
+	for signal_name in connections:
+		var callback: Callable = connections[signal_name]
+		if network_manager.is_connected(signal_name, callback):
+			network_manager.disconnect(signal_name, callback)

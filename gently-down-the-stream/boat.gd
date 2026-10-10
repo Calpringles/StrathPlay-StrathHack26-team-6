@@ -437,14 +437,17 @@ func _physics_process(delta: float) -> void:
 	if _is_server():
 		_process_boat_physics(delta)
 		if _is_multiplayer_active() and multiplayer.is_server():
-			for id in NetworkManager.get_loaded_game_peers():
-				_sync_boat_state.rpc_id(id, global_position, rotation.y, velocity, turn_speed)
+			var network_manager = get_node_or_null("/root/NetworkManager")
+			if network_manager != null:
+				for id in network_manager.get_loaded_game_peers():
+					_sync_boat_state.rpc_id(id, global_position, rotation.y, velocity, turn_speed)
 
 	# Update visual animations (oar strokes, boat roll/pitch sway)
 	_update_visuals(delta)
 
 func _handle_local_input() -> void:
-	if _is_multiplayer_active() and not NetworkManager.local_game_loaded:
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if _is_multiplayer_active() and (network_manager == null or not network_manager.local_game_loaded):
 		return
 	# Primary row action (Space or left click)
 	if Input.is_action_just_pressed("row"):
@@ -480,10 +483,10 @@ func _server_request_row(seat_index: int, is_reverse: bool) -> void:
 	if not is_inside_tree() or multiplayer == null or not multiplayer.is_server():
 		return
 	var sender_id = multiplayer.get_remote_sender_id()
-	if seat_index < 0 or seat_index >= oars.size() or not NetworkManager.loaded_game_peers.has(sender_id):
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager == null or seat_index < 0 or seat_index >= oars.size() or not network_manager.loaded_game_peers.has(sender_id):
 		return
 	# Verify sender owns this seat if registered
-	var network_manager = get_node_or_null("/root/NetworkManager")
 	if network_manager != null and network_manager.players.has(sender_id):
 		var assigned_seat = network_manager.players[sender_id].get("seat", -1)
 		if assigned_seat != seat_index:
@@ -494,7 +497,10 @@ func _server_request_row(seat_index: int, is_reverse: bool) -> void:
 		_send_oar_stroke(seat_index, is_reverse)
 
 func _send_oar_stroke(seat_index: int, is_reverse: bool) -> void:
-	for id in NetworkManager.get_loaded_game_peers():
+	var network_manager = get_node_or_null("/root/NetworkManager")
+	if network_manager == null:
+		return
+	for id in network_manager.get_loaded_game_peers():
 		_broadcast_oar_stroke.rpc_id(id, seat_index, is_reverse)
 
 @rpc("authority", "call_local", "unreliable")

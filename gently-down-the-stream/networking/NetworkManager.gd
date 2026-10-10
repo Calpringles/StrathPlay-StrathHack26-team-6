@@ -64,6 +64,7 @@ func get_local_ip() -> String:
 # --- Hosting & Joining ---
 
 func host_game(player_name: String, port: int = DEFAULT_PORT) -> Error:
+	disconnect_game()
 	local_player_name = player_name
 	peer = ENetMultiplayerPeer.new()
 	# By default, Godot binds to 0.0.0.0 (all local network interfaces)
@@ -87,6 +88,7 @@ func host_game(player_name: String, port: int = DEFAULT_PORT) -> Error:
 	return OK
 
 func join_game(ip_address: String, player_name: String, port: int = DEFAULT_PORT) -> Error:
+	disconnect_game()
 	local_player_name = player_name
 	peer = ENetMultiplayerPeer.new()
 	var clean_ip = ip_address.strip_edges()
@@ -109,6 +111,7 @@ func disconnect_game() -> void:
 	if peer:
 		peer.close()
 	multiplayer.multiplayer_peer = null
+	peer = null
 	players.clear()
 
 # --- Callbacks ---
