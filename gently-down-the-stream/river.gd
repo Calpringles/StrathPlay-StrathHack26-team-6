@@ -83,17 +83,6 @@ func _create_environment() -> void:
 		env_node.name = "WorldEnvironment"
 		var env: Environment = Environment.new()
 		
-<<<<<<< Updated upstream
-		# Procedural daylight sky
-		var sky_mat: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
-		sky_mat.sky_top_color = Color("#466579")
-		sky_mat.sky_horizon_color = Color("#a9bbc0")
-		sky_mat.ground_bottom_color = Color("#4f6255")
-		sky_mat.ground_horizon_color = Color("#b2c0bd")
-		sky_mat.sun_angle_max = 18.0
-		sky_mat.sun_curve = 0.08
-=======
->>>>>>> Stashed changes
 		var sky: Sky = Sky.new()
 		sky.sky_material = load("res://river_sky.tres")
 		sky.process_mode = Sky.PROCESS_MODE_REALTIME
@@ -105,18 +94,13 @@ func _create_environment() -> void:
 		env.ambient_light_energy = 0.58
 		env.tonemap_mode = Environment.TONE_MAPPER_ACES
 		env.fog_enabled = true
-<<<<<<< Updated upstream
 		env.fog_light_color = Color("#9fc9d0")
 		env.fog_density = 0.0012
 		env.fog_height = 2.0
 		env.fog_height_density = 0.018
-=======
-		env.fog_light_color = Color(0.70, 0.82, 0.88, 1.0)
-		env.fog_density = 0.002
 		# Fog may soften distant scenery without replacing the cloud sky.
 		env.fog_sky_affect = 0.0
 		env_node.environment = env
->>>>>>> Stashed changes
 		add_child(env_node)
 	if env_node.environment == null:
 		env_node.environment = Environment.new()
@@ -125,16 +109,9 @@ func _create_environment() -> void:
 	# contains a WorldEnvironment resource.
 	var active_env: Environment = env_node.environment
 	var muted_sky: Sky = Sky.new()
-	# Reliable built-in equivalent of the third reference: cool blue upper sky,
-	# pale blue-grey horizon, and a restrained daylight gradient.
-	var fallback_sky := ProceduralSkyMaterial.new()
-	fallback_sky.sky_top_color = Color("#587b98")
-	fallback_sky.sky_horizon_color = Color("#b8cbd1")
-	fallback_sky.ground_bottom_color = Color("#52675b")
-	fallback_sky.ground_horizon_color = Color("#b4c4bf")
-	fallback_sky.sun_angle_max = 24.0
-	fallback_sky.sun_curve = 0.12
-	muted_sky.sky_material = fallback_sky
+	muted_sky.sky_material = load("res://river_sky.tres")
+	muted_sky.process_mode = Sky.PROCESS_MODE_REALTIME
+	muted_sky.radiance_size = Sky.RADIANCE_SIZE_128
 	active_env.background_mode = Environment.BG_SKY
 	active_env.sky = muted_sky
 	active_env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
@@ -144,6 +121,7 @@ func _create_environment() -> void:
 	active_env.fog_enabled = true
 	active_env.fog_light_color = Color("#87979a")
 	active_env.fog_density = 0.0025
+	active_env.fog_sky_affect = 0.0
 
 	if directional_light != null:
 		directional_light.light_color = Color("#fff8e7")
@@ -899,14 +877,6 @@ func _create_hud() -> void:
 
 	# 6. Victory Panel (Modal)
 	victory_panel = PanelContainer.new()
-<<<<<<< Updated upstream
-	victory_panel.set_anchors_preset(Control.PRESET_CENTER)
-	victory_panel.offset_left = -210.0
-	victory_panel.offset_top = -130.0
-	victory_panel.offset_right = 210.0
-	victory_panel.offset_bottom = 130.0
-	victory_panel.custom_minimum_size = Vector2(420, 260)
-=======
 	victory_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	victory_panel.offset_left = -330
 	victory_panel.offset_right = 330
@@ -923,7 +893,6 @@ func _create_hud() -> void:
 	celebration_style.content_margin_top = 18
 	celebration_style.content_margin_bottom = 18
 	victory_panel.add_theme_stylebox_override("panel", celebration_style)
->>>>>>> Stashed changes
 	victory_panel.visible = false
 	root_control.add_child(victory_panel)
 
@@ -1070,14 +1039,12 @@ func _apply_damage_state(new_health: float, amount: float, reason: String) -> vo
 	if boat_health <= 0.0:
 		_trigger_game_over()
 
-<<<<<<< Updated upstream
 @rpc("authority", "call_remote", "reliable")
 func _sync_damage(new_health: float, amount: float, reason: String) -> void:
 	_apply_damage_state(new_health, amount, reason)
-=======
+
 func _is_game_authority() -> bool:
 	return not NetworkManager.is_connection_ready() or multiplayer.is_server()
->>>>>>> Stashed changes
 
 func _on_boat_sync_row(_seat_a: int, _seat_b: int) -> void:
 	sync_combos += 1
