@@ -91,111 +91,332 @@ horizontal_alignment = 1
 
 [node name="RoomPanel" type="PanelContainer" parent="CenterContainer"]
 visible = false
-custom_minimum_size = Vector2(540, 550)
+custom_minimum_size = Vector2(920, 580)
 layout_mode = 2
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/RoomPanel"]
+[node name="MainHBox" type="HBoxContainer" parent="CenterContainer/RoomPanel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 18
 
-[node name="RoomTitle" type="Label" parent="CenterContainer/RoomPanel/VBox"]
+[node name="LeftVBox" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox"]
+custom_minimum_size = Vector2(450, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="RoomTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Boat Staging Lobby"
 horizontal_alignment = 1
 
-[node name="IPInfoBox" type="HBoxContainer" parent="CenterContainer/RoomPanel/VBox"]
+[node name="IPInfoBox" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="LocalIPLabel" type="Label" parent="CenterContainer/RoomPanel/VBox/IPInfoBox"]
+[node name="LocalIPLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.4, 0.85, 0.55, 1)
 text = "LAN IP: 127.0.0.1"
 
-[node name="CopyIPButton" type="Button" parent="CenterContainer/RoomPanel/VBox/IPInfoBox"]
+[node name="CopyIPButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/IPInfoBox"]
 layout_mode = 2
 text = "Copy IP"
 
-[node name="HSeparator1" type="HSeparator" parent="CenterContainer/RoomPanel/VBox"]
+[node name="HSeparator1" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 
-[node name="PlayerListHeader" type="Label" parent="CenterContainer/RoomPanel/VBox"]
+[node name="PlayerListHeader" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 text = "Connected Players in Boat:"
 
-[node name="PlayerListScroll" type="ScrollContainer" parent="CenterContainer/RoomPanel/VBox"]
-custom_minimum_size = Vector2(0, 90)
+[node name="PlayerListScroll" type="ScrollContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
+custom_minimum_size = Vector2(0, 95)
 layout_mode = 2
 
-[node name="PlayerList" type="VBoxContainer" parent="CenterContainer/RoomPanel/VBox/PlayerListScroll"]
+[node name="PlayerList" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/PlayerListScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator2" type="HSeparator" parent="CenterContainer/RoomPanel/VBox"]
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 
-[node name="SeatHeader" type="Label" parent="CenterContainer/RoomPanel/VBox"]
+[node name="SeatHeader" type="Label" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 text = "Choose Your Oar / Seat Position:"
 
-[node name="SeatGrid" type="GridContainer" parent="CenterContainer/RoomPanel/VBox"]
+[node name="SeatGrid" type="GridContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 columns = 2
 
-[node name="Seat0" type="Button" parent="CenterContainer/RoomPanel/VBox/SeatGrid"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Seat0" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Front-Left Oar"
 
-[node name="Seat1" type="Button" parent="CenterContainer/RoomPanel/VBox/SeatGrid"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Seat1" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Front-Right Oar"
 
-[node name="Seat2" type="Button" parent="CenterContainer/RoomPanel/VBox/SeatGrid"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Seat2" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Mid-Left Oar"
 
-[node name="Seat3" type="Button" parent="CenterContainer/RoomPanel/VBox/SeatGrid"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Seat3" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Mid-Right Oar"
 
-[node name="Seat4" type="Button" parent="CenterContainer/RoomPanel/VBox/SeatGrid"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Seat4" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Back-Left Oar"
 
-[node name="Seat5" type="Button" parent="CenterContainer/RoomPanel/VBox/SeatGrid"]
-custom_minimum_size = Vector2(0, 40)
+[node name="Seat5" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/SeatGrid"]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Back-Right Oar"
 
-[node name="HSeparator3" type="HSeparator" parent="CenterContainer/RoomPanel/VBox"]
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 
-[node name="ControlRow" type="HBoxContainer" parent="CenterContainer/RoomPanel/VBox"]
+[node name="ControlRow" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="LeaveRoomButton" type="Button" parent="CenterContainer/RoomPanel/VBox/ControlRow"]
+[node name="LeaveRoomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Leave Room"
 
-[node name="StartGameButton" type="Button" parent="CenterContainer/RoomPanel/VBox/ControlRow"]
+[node name="StartGameButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/LeftVBox/ControlRow"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.2, 0.9, 0.4, 1)
 text = "Start Game (Host Only)"
+
+[node name="VSeparator" type="VSeparator" parent="CenterContainer/RoomPanel/MainHBox"]
+layout_mode = 2
+
+[node name="CustomizationVBox" type="VBoxContainer" parent="CenterContainer/RoomPanel/MainHBox"]
+custom_minimum_size = Vector2(390, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="CustomTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🎨 Customise Your Rower"
+horizontal_alignment = 1
+
+[node name="PreviewCenter" type="CenterContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+layout_mode = 2
+
+[node name="PreviewContainer" type="SubViewportContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter"]
+custom_minimum_size = Vector2(240, 160)
+layout_mode = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer"]
+own_world_3d = true
+handle_input_locally = false
+size = Vector2i(240, 160)
+render_target_update_mode = 3
+
+[node name="Camera3D" type="Camera3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.65, 1.35)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/PreviewCenter/PreviewContainer/SubViewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 2, 2)
+
+[node name="RandomButton" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+text = "🎲 Randomise Avatar"
+
+[node name="OptionsGrid" type="GridContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="EyesTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Eyes:"
+
+[node name="EyesControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Normal"
+horizontal_alignment = 1
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/EyesControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"
+
+[node name="MouthTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+text = "Mouth:"
+
+[node name="MouthControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Smile :)"
+horizontal_alignment = 1
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/MouthControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"
+
+[node name="HatTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+text = "Hat:"
+
+[node name="HatControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ValueLabel" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "None"
+horizontal_alignment = 1
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"
+
+[node name="SkinTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+text = "Skin Color:"
+
+[node name="SkinControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.878431, 0.67451, 0.411765, 1)
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/SkinControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"
+
+[node name="ShirtTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+text = "Shirt Color:"
+
+[node name="ShirtControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.905882, 0.298039, 0.235294, 1)
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/ShirtControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"
+
+[node name="PantsTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+text = "Pants Color:"
+
+[node name="PantsControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.203922, 0.286275, 0.368627, 1)
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/PantsControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"
+
+[node name="HatColTitle" type="Label" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+text = "Hat Color:"
+
+[node name="HatColorControl" type="HBoxContainer" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PrevBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = "<"
+
+[node name="ColorBox" type="ColorRect" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.905882, 0.298039, 0.235294, 1)
+
+[node name="NextBtn" type="Button" parent="CenterContainer/RoomPanel/MainHBox/CustomizationVBox/OptionsGrid/HatColorControl"]
+custom_minimum_size = Vector2(32, 28)
+layout_mode = 2
+text = ">"

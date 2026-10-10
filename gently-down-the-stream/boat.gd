@@ -37,31 +37,41 @@ const SEAT_NAMES: Array[String] = [
 ]
 
 const OAR_CONFIGS: Array[Dictionary] = [
-	{"name": "Front-Left",  "pos": Vector3(-0.92, 0.45, -1.2), "side": -1.0, "torque_factor": 1.25, "thrust_factor": 0.95},
-	{"name": "Front-Right", "pos": Vector3(0.92, 0.45, -1.2),  "side": 1.0,  "torque_factor": 1.25, "thrust_factor": 0.95},
-	{"name": "Mid-Left",    "pos": Vector3(-0.98, 0.45, 0.0),   "side": -1.0, "torque_factor": 0.70, "thrust_factor": 1.15},
-	{"name": "Mid-Right",   "pos": Vector3(0.98, 0.45, 0.0),    "side": 1.0,  "torque_factor": 0.70, "thrust_factor": 1.15},
-	{"name": "Back-Left",   "pos": Vector3(-0.92, 0.45, 1.2),  "side": -1.0, "torque_factor": 1.15, "thrust_factor": 0.95},
-	{"name": "Back-Right",  "pos": Vector3(0.92, 0.45, 1.2),   "side": 1.0,  "torque_factor": 1.15, "thrust_factor": 0.95}
+	{"name": "Front-Left",  "pos": Vector3(-0.68, 0.30, -0.82), "side": -1.0, "torque_factor": 1.25, "thrust_factor": 0.95},
+	{"name": "Front-Right", "pos": Vector3(0.68, 0.30, -0.82),  "side": 1.0,  "torque_factor": 1.25, "thrust_factor": 0.95},
+	{"name": "Mid-Left",    "pos": Vector3(-0.72, 0.30, 0.0),   "side": -1.0, "torque_factor": 0.70, "thrust_factor": 1.15},
+	{"name": "Mid-Right",   "pos": Vector3(0.72, 0.30, 0.0),    "side": 1.0,  "torque_factor": 0.70, "thrust_factor": 1.15},
+	{"name": "Back-Left",   "pos": Vector3(-0.68, 0.30, 0.82),  "side": -1.0, "torque_factor": 1.15, "thrust_factor": 0.95},
+	{"name": "Back-Right",  "pos": Vector3(0.68, 0.30, 0.82),   "side": 1.0,  "torque_factor": 1.15, "thrust_factor": 0.95}
 ]
 
 const SEAT_POSITIONS: Array[Vector3] = [
-	Vector3(-0.45, 0.35, -1.2), # Seat 0: Front-Left
-	Vector3(0.45, 0.35, -1.2),  # Seat 1: Front-Right
-	Vector3(-0.48, 0.35, 0.0),   # Seat 2: Mid-Left
-	Vector3(0.48, 0.35, 0.0),    # Seat 3: Mid-Right
-	Vector3(-0.45, 0.35, 1.2),  # Seat 4: Back-Left
-	Vector3(0.45, 0.35, 1.2)   # Seat 5: Back-Right
+	Vector3(-0.31, 0.22, -0.82), # Seat 0: Front-Left
+	Vector3(0.31, 0.22, -0.82),  # Seat 1: Front-Right
+	Vector3(-0.31, 0.22, 0.0),   # Seat 2: Mid-Left
+	Vector3(0.31, 0.22, 0.0),    # Seat 3: Mid-Right
+	Vector3(-0.31, 0.22, 0.82),  # Seat 4: Back-Left
+	Vector3(0.31, 0.22, 0.82)   # Seat 5: Back-Right
 ]
 
-const BENCH_Z: Array[float] = [-1.2, 0.0, 1.2]
-const BENCH_WIDTHS: Array[float] = [1.55, 1.72, 1.55]
+const BENCH_Z: Array[float] = [-0.82, 0.0, 0.82]
+const BENCH_WIDTHS: Array[float] = [1.15, 1.25, 1.15]
+
+const SEAT_COLORS: Array[Color] = [
+	Color("#e74c3c"), # Front-Left (Coral Red)
+	Color("#3498db"), # Front-Right (Ocean Blue)
+	Color("#2ecc71"), # Mid-Left (Emerald Green)
+	Color("#f39c12"), # Mid-Right (Warm Gold)
+	Color("#9b59b6"), # Back-Left (Royal Purple)
+	Color("#1abc9c")  # Back-Right (Turquoise)
+]
 
 var turn_speed: float = 0.0
 var visual_tilt: Vector3 = Vector3.ZERO
 var ambient_timer: float = 0.0
 
 var oars: Array[Node3D] = []
+var rowers: Array[Node3D] = []
 var stroke_timers: Array[float] = []
 var stroke_is_reverse: Array[bool] = []
 var last_stroke_times: Array[float] = []
@@ -69,11 +79,31 @@ var seat_labels: Array[Label3D] = []
 
 var boat_visual_root: Node3D = null
 
+func _find_asset_path(filename: String) -> String:
+	for prefix in [
+		"res://Game-Assets/boatassets/",
+		"res://boatassets/"
+	]:
+		var full_path = prefix + filename
+		if ResourceLoader.exists(full_path):
+			return full_path
+	return ""
+
+func _find_rower_path() -> String:
+	for p in [
+		"res://seated-rower.glb",
+		"res://Game-Assets/boatassets/seated-rower.glb",
+		"res://boatassets/seated-rower.glb"
+	]:
+		if ResourceLoader.exists(p):
+			return p
+	return ""
+
 func _ready() -> void:
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 
 	# Clean up any legacy placeholder oar nodes
-	for old_name in ["LeftOar", "RightOar", "Oars", "BoatVisual"]:
+	for old_name in ["LeftOar", "RightOar", "Oars", "BoatVisual", "Hull"]:
 		var old_node: Node = get_node_or_null(NodePath(old_name))
 		if old_node != null:
 			remove_child(old_node)
@@ -91,12 +121,13 @@ func _ready() -> void:
 		stroke_is_reverse.append(false)
 		last_stroke_times.append(-999.0)
 
+	_update_seat_labels()
+
 	# Listen for network roster updates if NetworkManager is active
 	if is_inside_tree():
 		var nm = get_node_or_null("/root/NetworkManager")
 		if nm != null and nm.has_signal("player_list_updated"):
 			nm.player_list_updated.connect(_update_seat_labels)
-			_update_seat_labels()
 
 func _setup_collision() -> void:
 	var col_shape: CollisionShape3D = get_node_or_null("CollisionShape3D")
@@ -107,9 +138,9 @@ func _setup_collision() -> void:
 	
 	if col_shape.shape == null:
 		var box: BoxShape3D = BoxShape3D.new()
-		box.size = Vector3(1.9, 0.8, 6.0)
+		box.size = Vector3(1.4, 0.6, 4.3)
 		col_shape.shape = box
-		col_shape.position = Vector3(0.0, 0.35, 0.0)
+		col_shape.position = Vector3(0.0, 0.25, 0.0)
 
 func _build_boat_visuals() -> void:
 	boat_visual_root = Node3D.new()
@@ -117,13 +148,15 @@ func _build_boat_visuals() -> void:
 	add_child(boat_visual_root)
 
 	# 1. Instantiate Boat Hull from 3D model
+	# Raw FBX has bow at +X, internal child has rot -90. Parent rot 180 results in net +90, pointing bow at -Z downriver!
 	var hull_node: Node3D = null
-	if ResourceLoader.exists("res://boatassets/Wood_BoatV1.fbx"):
-		var boat_scene: PackedScene = load("res://boatassets/Wood_BoatV1.fbx")
+	var boat_path = _find_asset_path("Wood_BoatV1.fbx")
+	if boat_path != "":
+		var boat_scene: PackedScene = load(boat_path)
 		hull_node = boat_scene.instantiate()
 		hull_node.name = "HullMesh"
-		hull_node.rotation_degrees.y = 90.0 # Bow points along -Z
-		hull_node.scale = Vector3(1.28, 1.15, 1.52)
+		hull_node.rotation_degrees.y = 180.0 # Bow points along -Z forward into river
+		hull_node.scale = Vector3(0.95, 0.82, 0.88)
 		hull_node.position = Vector3(0.0, 0.0, 0.0)
 		boat_visual_root.add_child(hull_node)
 
@@ -135,10 +168,35 @@ func _build_boat_visuals() -> void:
 	cushion_material.albedo_color = Color("#2e2620")
 	cushion_material.roughness = 0.8
 
-	# 2. Attach labels to Seats (either from seats.gd node or generated)
+	# Load generic rower model
+	var rower_packed: PackedScene = null
+	var rower_path = _find_rower_path()
+	if rower_path != "":
+		rower_packed = load(rower_path)
+
+	# 2. Attach cross-benches, seat platforms, and Rower characters to Seats
+	rowers.clear()
 	seat_labels.clear()
+
 	var existing_seats = get_node_or_null("Seats")
 	if existing_seats != null:
+		# Reparent to boat_visual_root so seats, rowers, and labels sway and bob with the boat hull!
+		if existing_seats.get_parent() != boat_visual_root:
+			existing_seats.reparent(boat_visual_root)
+
+		# Add cross-benches spanning the boat hull
+		for i in range(BENCH_Z.size()):
+			var bench_name = "Bench%d" % i
+			if existing_seats.get_node_or_null(bench_name) == null:
+				var bench_mesh_inst: MeshInstance3D = MeshInstance3D.new()
+				bench_mesh_inst.name = bench_name
+				var bench_mesh: BoxMesh = BoxMesh.new()
+				bench_mesh.size = Vector3(BENCH_WIDTHS[i], 0.06, 0.26)
+				bench_mesh_inst.mesh = bench_mesh
+				bench_mesh_inst.material_override = wood_material
+				bench_mesh_inst.position = Vector3(0.0, 0.22, BENCH_Z[i])
+				existing_seats.add_child(bench_mesh_inst)
+
 		for s_idx in range(6):
 			var seat_node_name = "Seat%d" % (s_idx + 1)
 			var marker: Node3D = existing_seats.get_node_or_null(seat_node_name) as Node3D
@@ -148,15 +206,28 @@ func _build_boat_visuals() -> void:
 				marker.position = SEAT_POSITIONS[s_idx]
 				existing_seats.add_child(marker)
 
+			# Instantiate Rower Character
+			var rower_inst: Node3D = null
+			if rower_packed != null:
+				rower_inst = rower_packed.instantiate()
+				rower_inst.name = "Rower"
+				rower_inst.scale = Vector3(0.68, 0.68, 0.68)
+				rower_inst.position = Vector3.ZERO
+				var side = OAR_CONFIGS[s_idx].side
+				rower_inst.rotation.y = side * deg_to_rad(8.0) # Angle slightly towards oar
+				CharacterCustomizer.apply_to_rower(rower_inst, CharacterCustomizer.get_default_customization(s_idx))
+				marker.add_child(rower_inst)
+			rowers.append(rower_inst)
+
 			var lbl: Label3D = Label3D.new()
 			lbl.name = "Label"
 			lbl.text = SEAT_NAMES[s_idx]
-			lbl.font_size = 20
+			lbl.font_size = 18
 			lbl.modulate = Color(1.0, 0.95, 0.8, 0.9)
 			lbl.outline_modulate = Color(0, 0, 0, 0.8)
 			lbl.outline_size = 4
 			lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-			lbl.position = Vector3(0.0, 0.55, 0.0)
+			lbl.position = Vector3(0.0, 0.88, 0.0) # Hover above rower's head
 			marker.add_child(lbl)
 			seat_labels.append(lbl)
 	else:
@@ -168,10 +239,10 @@ func _build_boat_visuals() -> void:
 			var bench_mesh_inst: MeshInstance3D = MeshInstance3D.new()
 			bench_mesh_inst.name = "Bench%d" % i
 			var bench_mesh: BoxMesh = BoxMesh.new()
-			bench_mesh.size = Vector3(BENCH_WIDTHS[i], 0.08, 0.36)
+			bench_mesh.size = Vector3(BENCH_WIDTHS[i], 0.06, 0.26)
 			bench_mesh_inst.mesh = bench_mesh
 			bench_mesh_inst.material_override = wood_material
-			bench_mesh_inst.position = Vector3(0.0, 0.34, BENCH_Z[i])
+			bench_mesh_inst.position = Vector3(0.0, 0.22, BENCH_Z[i])
 			seats_container.add_child(bench_mesh_inst)
 
 		for s_idx in range(SEAT_POSITIONS.size()):
@@ -183,21 +254,33 @@ func _build_boat_visuals() -> void:
 			var cushion_node: MeshInstance3D = MeshInstance3D.new()
 			cushion_node.name = "Cushion%d" % s_idx
 			var cushion_mesh: BoxMesh = BoxMesh.new()
-			cushion_mesh.size = Vector3(0.42, 0.05, 0.32)
+			cushion_mesh.size = Vector3(0.32, 0.04, 0.24)
 			cushion_node.mesh = cushion_mesh
 			cushion_node.material_override = cushion_material
-			cushion_node.position = Vector3(0.0, 0.04, 0.0)
+			cushion_node.position = Vector3(0.0, 0.03, 0.0)
 			seat_marker.add_child(cushion_node)
+
+			var rower_inst: Node3D = null
+			if rower_packed != null:
+				rower_inst = rower_packed.instantiate()
+				rower_inst.name = "Rower"
+				rower_inst.scale = Vector3(0.68, 0.68, 0.68)
+				rower_inst.position = Vector3.ZERO
+				var side = OAR_CONFIGS[s_idx].side
+				rower_inst.rotation.y = side * deg_to_rad(8.0)
+				CharacterCustomizer.apply_to_rower(rower_inst, CharacterCustomizer.get_default_customization(s_idx))
+				seat_marker.add_child(rower_inst)
+			rowers.append(rower_inst)
 
 			var lbl: Label3D = Label3D.new()
 			lbl.name = "Label%d" % s_idx
 			lbl.text = SEAT_NAMES[s_idx]
-			lbl.font_size = 20
+			lbl.font_size = 18
 			lbl.modulate = Color(1.0, 0.95, 0.8, 0.9)
 			lbl.outline_modulate = Color(0, 0, 0, 0.8)
 			lbl.outline_size = 4
 			lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-			lbl.position = Vector3(0.0, 0.55, 0.0)
+			lbl.position = Vector3(0.0, 0.88, 0.0)
 			seat_marker.add_child(lbl)
 			seat_labels.append(lbl)
 
@@ -208,8 +291,9 @@ func _build_boat_visuals() -> void:
 
 	oars.clear()
 	var paddle_packed: PackedScene = null
-	if ResourceLoader.exists("res://boatassets/Paddle.fbx"):
-		paddle_packed = load("res://boatassets/Paddle.fbx")
+	var paddle_path = _find_asset_path("Paddle.fbx")
+	if paddle_path != "":
+		paddle_packed = load(paddle_path)
 
 	var brass_mat: StandardMaterial3D = StandardMaterial3D.new()
 	brass_mat.albedo_color = Color("#b8860b") # Brass oarlock
@@ -227,9 +311,9 @@ func _build_boat_visuals() -> void:
 		var oarlock: MeshInstance3D = MeshInstance3D.new()
 		oarlock.name = "Oarlock"
 		var ring: CylinderMesh = CylinderMesh.new()
-		ring.top_radius = 0.06
-		ring.bottom_radius = 0.06
-		ring.height = 0.12
+		ring.top_radius = 0.04
+		ring.bottom_radius = 0.04
+		ring.height = 0.08
 		oarlock.mesh = ring
 		oarlock.material_override = brass_mat
 		pivot.add_child(oarlock)
@@ -248,17 +332,17 @@ func _build_boat_visuals() -> void:
 			# For left oar (-1): rotate -90 to point blade to -X into water.
 			var resting_yaw = 90.0 if side > 0.0 else -90.0
 			paddle_instance.rotation_degrees = Vector3(10.0, resting_yaw, 0.0)
-			paddle_instance.scale = Vector3(0.92, 0.92, 0.92)
+			paddle_instance.scale = Vector3(0.68, 0.68, 0.68)
 			paddle_pivot_offset.add_child(paddle_instance)
 		else:
 			# Fallback box oar
 			var mesh_node: MeshInstance3D = MeshInstance3D.new()
 			mesh_node.name = "Mesh"
 			var mesh: BoxMesh = BoxMesh.new()
-			mesh.size = Vector3(2.2, 0.1, 0.18)
+			mesh.size = Vector3(1.6, 0.08, 0.12)
 			mesh_node.mesh = mesh
 			mesh_node.material_override = wood_material
-			mesh_node.position.x = side * 1.1
+			mesh_node.position.x = side * 0.8
 			paddle_pivot_offset.add_child(mesh_node)
 
 		oars.append(pivot)
@@ -273,32 +357,53 @@ func _update_seat_labels() -> void:
 	if not is_inside_tree():
 		return
 	var nm = get_node_or_null("/root/NetworkManager")
-	if nm == null:
-		return
-
-	var my_id = multiplayer.get_unique_id() if _is_multiplayer_active() else 1
+	var is_mp = _is_multiplayer_active() and nm != null
+	var my_id = multiplayer.get_unique_id() if is_mp else 1
 
 	for s_idx in range(seat_labels.size()):
 		var occupant_name = ""
 		var is_local = false
-		for p_id in nm.players:
-			if nm.players[p_id].get("seat", -1) == s_idx:
-				occupant_name = nm.players[p_id].get("name", "Player")
-				if p_id == my_id:
-					is_local = true
-					local_seat = s_idx
-				break
+		var occupant_customization: Dictionary = {}
 
-		if occupant_name != "":
-			seat_labels[s_idx].text = "%s\n[%s%s]" % [
-				SEAT_NAMES[s_idx],
-				occupant_name,
-				" (YOU)" if is_local else ""
-			]
-			seat_labels[s_idx].modulate = Color(0.4, 1.0, 0.5) if is_local else Color(1.0, 0.85, 0.4)
+		if is_mp and nm.players.size() > 0:
+			for p_id in nm.players:
+				if nm.players[p_id].get("seat", -1) == s_idx:
+					occupant_name = nm.players[p_id].get("name", "Player")
+					occupant_customization = nm.players[p_id].get("customization", {})
+					if p_id == my_id:
+						is_local = true
+						local_seat = s_idx
+					break
+
+			if occupant_name != "":
+				seat_labels[s_idx].text = "%s\n[%s%s]" % [
+					SEAT_NAMES[s_idx],
+					occupant_name,
+					" (YOU)" if is_local else ""
+				]
+				seat_labels[s_idx].modulate = Color(0.4, 1.0, 0.5) if is_local else Color(1.0, 0.85, 0.4)
+				if s_idx < rowers.size() and rowers[s_idx] != null:
+					rowers[s_idx].visible = true
+					if not occupant_customization.is_empty():
+						CharacterCustomizer.apply_to_rower(rowers[s_idx], occupant_customization)
+			else:
+				seat_labels[s_idx].text = "%s\n[Empty]" % SEAT_NAMES[s_idx]
+				seat_labels[s_idx].modulate = Color(0.8, 0.8, 0.8, 0.6)
+				if s_idx < rowers.size() and rowers[s_idx] != null:
+					rowers[s_idx].visible = false
 		else:
-			seat_labels[s_idx].text = "%s\n[Empty]" % SEAT_NAMES[s_idx]
-			seat_labels[s_idx].modulate = Color(0.8, 0.8, 0.8, 0.6)
+			# Single-player / offline mode: show all crew rowers
+			if s_idx < rowers.size() and rowers[s_idx] != null:
+				rowers[s_idx].visible = true
+				if nm != null and nm.get("local_customization") != null and s_idx == local_seat:
+					CharacterCustomizer.apply_to_rower(rowers[s_idx], nm.local_customization)
+
+			if s_idx == local_seat:
+				seat_labels[s_idx].text = "%s\n[YOU - Click to Row]" % SEAT_NAMES[s_idx]
+				seat_labels[s_idx].modulate = Color(0.4, 1.0, 0.5)
+			else:
+				seat_labels[s_idx].text = "%s\n[Press %d to Row]" % [SEAT_NAMES[s_idx], s_idx + 1]
+				seat_labels[s_idx].modulate = Color(1.0, 0.95, 0.8, 0.9)
 
 func _physics_process(delta: float) -> void:
 	ambient_timer += delta
@@ -379,7 +484,7 @@ func _broadcast_oar_stroke(seat_index: int, is_reverse: bool) -> void:
 	if seat_index >= 0 and seat_index < oars.size():
 		stroke_timers[seat_index] = stroke_duration
 		stroke_is_reverse[seat_index] = is_reverse
-
+	
 @rpc("authority", "unreliable_ordered")
 func _sync_boat_state(pos: Vector3, rot_y: float, vel: Vector3, t_speed: float) -> void:
 	if not multiplayer.is_server():
@@ -442,11 +547,12 @@ func _process_boat_physics(delta: float) -> void:
 	global_position.x = clampf(global_position.x, min_x, max_x)
 
 func _update_visuals(delta: float) -> void:
-	# Animate each oar independently based on its stroke phase
+	# Animate each oar and rower based on their stroke phase
 	for index in range(oars.size()):
 		var timer = stroke_timers[index]
 		var is_rev = stroke_is_reverse[index]
 		var side = OAR_CONFIGS[index].side
+		var rower = rowers[index] if index < rowers.size() else null
 
 		if timer > 0.0:
 			var progress = 1.0 - (timer / stroke_duration) # 0.0 to 1.0
@@ -471,15 +577,54 @@ func _update_visuals(delta: float) -> void:
 				dip_angle = -p * 0.22
 
 			# Apply rotation to oar pivot:
-			# Left oar: side = -1.0. Sweeping back means rotating clockwise around Y.
-			# Right oar: side = +1.0. Sweeping back means rotating counter-clockwise around Y.
 			oars[index].rotation.y = side * sweep_angle
 			oars[index].rotation.z = side * dip_angle
+
+			# Animate rower character stroke
+			if rower != null and rower.visible:
+				var target_pitch: float
+				var target_yaw: float
+				var target_roll: float
+				var base_yaw: float = side * deg_to_rad(8.0)
+
+				if not is_rev:
+					if progress < 0.55:
+						# Drive phase: Rower reaches forward at catch, pulls torso back
+						var p = progress / 0.55
+						target_pitch = lerpf(-0.14, 0.22, p)
+						target_yaw = base_yaw + (side * sin(p * PI) * 0.16)
+						target_roll = -side * sin(p * PI) * 0.06
+					else:
+						# Recovery phase: Smoothly return torso forward for next stroke
+						var p = (progress - 0.55) / 0.45
+						target_pitch = lerpf(0.22, -0.14, sin(p * (PI * 0.5)))
+						target_yaw = lerpf(base_yaw + side * 0.16, base_yaw, p)
+						target_roll = lerpf(-side * 0.06, 0.0, p)
+				else:
+					# Reverse backwater stroke: push torso forward
+					var p = sin(progress * PI)
+					target_pitch = -p * 0.18
+					target_yaw = base_yaw - (side * p * 0.12)
+					target_roll = 0.0
+
+				rower.rotation.x = lerpf(rower.rotation.x, target_pitch, 16.0 * delta)
+				rower.rotation.y = lerpf(rower.rotation.y, target_yaw, 16.0 * delta)
+				rower.rotation.z = lerpf(rower.rotation.z, target_roll, 16.0 * delta)
 		else:
-			# Resting position with gentle water bobbing
+			# Resting position with gentle water bobbing for oar
 			var rest_bob = sin(ambient_timer * 2.5 + index * 0.6) * 0.03
 			oars[index].rotation.y = lerpf(oars[index].rotation.y, 0.0, 12.0 * delta)
 			oars[index].rotation.z = lerpf(oars[index].rotation.z, rest_bob, 8.0 * delta)
+
+			# Resting rower with idle breathing sway
+			if rower != null and rower.visible:
+				var base_yaw: float = side * deg_to_rad(8.0)
+				var breath_pitch = sin(ambient_timer * 1.8 + index * 0.8) * 0.02
+				var breath_roll = cos(ambient_timer * 1.4 + index * 0.6) * 0.015
+
+				rower.rotation.x = lerpf(rower.rotation.x, breath_pitch, 8.0 * delta)
+				rower.rotation.y = lerpf(rower.rotation.y, base_yaw, 8.0 * delta)
+				rower.rotation.z = lerpf(rower.rotation.z, breath_roll, 8.0 * delta)
 
 	# Dynamic boat hull roll, pitch, and gentle wave sway
 	if boat_visual_root != null:

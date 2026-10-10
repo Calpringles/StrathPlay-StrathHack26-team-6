@@ -10,14 +10,16 @@ signal player_list_updated()
 signal connection_failed()
 signal server_disconnected()
 
-# Stores: { peer_id: { "name": String, "seat": int } }
+# Stores: { peer_id: { "name": String, "seat": int, "customization": Dictionary } }
 # Seat mapping: -1 = Unassigned, 0 = Front-Left, 1 = Front-Right, 2 = Mid-Left, 3 = Mid-Right, 4 = Back-Left, 5 = Back-Right
 var players: Dictionary = {}
 var local_player_name: String = "Player"
+var local_customization: Dictionary = {}
 
 var peer: ENetMultiplayerPeer
 
 func _ready() -> void:
+	local_customization = CharacterCustomizer.get_default_customization(0)
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
@@ -56,7 +58,8 @@ func host_game(player_name: String, port: int = DEFAULT_PORT) -> Error:
 	# Host is always peer ID 1
 	players[1] = {
 		"name": local_player_name,
-		"seat": -1
+		"seat": -1,
+		"customization": local_customization
 	}
 	player_list_updated.emit()
 	print("Host started server on port ", port)
@@ -99,7 +102,7 @@ func _on_peer_disconnected(id: int) -> void:
 
 func _on_connected_to_server() -> void:
 	print("Successfully connected to host!")
-	_register_player.rpc_id(1, local_player_name)
+	_register_player.rpc_id(1, local_player_name, local_customization)
 
 func _on_connection_failed() -> void:
 	print("Failed to connect to host.")
@@ -115,13 +118,14 @@ func _on_server_disconnected() -> void:
 # --- RPCs ---
 
 @rpc("any_peer", "reliable")
-func _register_player(player_name: String) -> void:
+func _register_player(player_name: String, custom_data: Dictionary = {}) -> void:
 	if not multiplayer.is_server():
 		return
 	var sender_id = multiplayer.get_remote_sender_id()
 	players[sender_id] = {
 		"name": player_name,
-		"seat": -1
+		"seat": -1,
+		"customization": custom_data
 	}
 	_sync_players_to_clients.rpc(players)
 	player_connected.emit(sender_id, players[sender_id])
@@ -130,6 +134,30 @@ func _register_player(player_name: String) -> void:
 @rpc("authority", "call_local", "reliable")
 func _sync_players_to_clients(updated_players: Dictionary) -> void:
 	players = updated_players
+	player_list_updated.emit()
+
+@rpc("any_peer", "call_local", "reliable")
+func request_customization(custom_data: Dictionary) -> void:
+	var sender_id = multiplayer.get_remote_sender_id()
+	if sender_id == 0:
+		sender_id = multiplayer.get_unique_id()
+	if not multiplayer.is_server():
+		request_customization.rpc_id(1, custom_data)
+		return
+	if players.has(sender_id):
+		players[sender_id]["customization"] = custom_data
+		_sync_players_to_clients.rpc(players)
+
+func set_local_customization(custom_data: Dictionary) -> void:
+	local_customization = custom_data
+	var my_id = multiplayer.get_unique_id() if (multiplayer != null and multiplayer.has_multiplayer_peer()) else 1
+	if players.has(my_id):
+		players[my_id]["customization"] = custom_data
+	if multiplayer != null and multiplayer.has_multiplayer_peer():
+		if multiplayer.is_server():
+			_sync_players_to_clients.rpc(players)
+		else:
+			request_customization.rpc_id(1, custom_data)
 	player_list_updated.emit()
 
 @rpc("any_peer", "call_local", "reliable")
