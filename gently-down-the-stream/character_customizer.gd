@@ -265,9 +265,9 @@ static func apply_to_rower(rower_node: Node3D, data: Dictionary) -> void:
 			mesh_inst.material_override = shirt_mat
 		elif m_name.contains("neck") or m_name.contains("hand") or m_name.contains("forearm"):
 			mesh_inst.material_override = skin_mat
-		elif m_name.contains("thigh"):
+		elif m_name.contains("thigh") or m_name.contains("shin"):
 			mesh_inst.material_override = pants_mat
-		elif m_name.contains("shin") or m_name.contains("foot"):
+		elif m_name.contains("foot"):
 			mesh_inst.material_override = shoes_mat
 		elif m_name != "facedecal":
 			mesh_inst.material_override = shirt_mat

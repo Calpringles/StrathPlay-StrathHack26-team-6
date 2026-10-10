@@ -799,14 +799,32 @@ func _create_hud() -> void:
 	root_control.add_child(damage_flash_rect)
 
 	# 2. Top Status Bar Container
-	var top_bar: HBoxContainer = HBoxContainer.new()
-	top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top_bar.offset_left = 24
-	top_bar.offset_top = 16
-	top_bar.offset_right = -24
-	top_bar.offset_bottom = 64
-	top_bar.add_theme_constant_override("separation", 24)
-	root_control.add_child(top_bar)
+	var status_panel = PanelContainer.new()
+	status_panel.name = "TopStatusPanel"
+	status_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	status_panel.offset_left = 16
+	status_panel.offset_top = 12
+	status_panel.offset_right = -16
+	status_panel.offset_bottom = 76
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color("#101e2e")
+	panel_style.border_color = Color("#7194b5")
+	panel_style.set_border_width_all(2)
+	panel_style.set_corner_radius_all(10)
+	panel_style.content_margin_left = 16
+	panel_style.content_margin_right = 16
+	panel_style.content_margin_top = 8
+	panel_style.content_margin_bottom = 8
+	status_panel.add_theme_stylebox_override("panel", panel_style)
+	var status_theme = Theme.new()
+	status_theme.set_color("font_color", "Label", Color.WHITE)
+	status_theme.set_color("font_outline_color", "Label", Color.BLACK)
+	status_theme.set_constant("outline_size", "Label", 2)
+	status_panel.theme = status_theme
+	root_control.add_child(status_panel)
+	var top_bar = HBoxContainer.new()
+	top_bar.add_theme_constant_override("separation", 16)
+	status_panel.add_child(top_bar)
 
 	# Health Container
 	var health_box: HBoxContainer = HBoxContainer.new()
@@ -823,6 +841,7 @@ func _create_hud() -> void:
 	health_bar.value = 100.0
 	health_bar.show_percentage = false
 	health_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_style_status_progress(health_bar, Color("#50e3a4"))
 	health_box.add_child(health_bar)
 
 	health_label = Label.new()
@@ -847,6 +866,7 @@ func _create_hud() -> void:
 	distance_bar.max_value = RIVER_LENGTH
 	distance_bar.value = 0.0
 	distance_bar.show_percentage = false
+	_style_status_progress(distance_bar, Color("#ffc857"))
 	dist_box.add_child(distance_bar)
 
 	distance_label = Label.new()
@@ -864,6 +884,19 @@ func _create_hud() -> void:
 	# Leave Button
 	var leave_btn = Button.new()
 	leave_btn.text = "Leave to Lobby"
+	var button_style = StyleBoxFlat.new()
+	button_style.bg_color = Color("#284b68")
+	button_style.border_color = Color("#a4c5e0")
+	button_style.set_border_width_all(1)
+	button_style.set_corner_radius_all(6)
+	button_style.content_margin_left = 12
+	button_style.content_margin_right = 12
+	leave_btn.add_theme_stylebox_override("normal", button_style)
+	var hover_style = button_style.duplicate()
+	hover_style.bg_color = Color("#3b6586")
+	leave_btn.add_theme_stylebox_override("hover", hover_style)
+	leave_btn.add_theme_color_override("font_color", Color.WHITE)
+	leave_btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	leave_btn.pressed.connect(_on_return_to_lobby_pressed)
 	top_bar.add_child(leave_btn)
 
@@ -1092,6 +1125,18 @@ func apply_object_damage(object: Node, amount: float, reason: String) -> bool:
 	damaged_objects[object_id] = elapsed_time + OBJECT_DAMAGE_INTERVAL
 	_apply_damage(amount, reason)
 	return true
+
+func _style_status_progress(bar: ProgressBar, fill_color: Color) -> void:
+	var track = StyleBoxFlat.new()
+	track.bg_color = Color("#071019")
+	track.border_color = Color("#819bb1")
+	track.set_border_width_all(1)
+	track.set_corner_radius_all(5)
+	var fill = StyleBoxFlat.new()
+	fill.bg_color = fill_color
+	fill.set_corner_radius_all(4)
+	bar.add_theme_stylebox_override("background", track)
+	bar.add_theme_stylebox_override("fill", fill)
 
 func _apply_damage(amount: float, reason: String) -> void:
 	var new_health = maxf(0.0, boat_health - amount)
