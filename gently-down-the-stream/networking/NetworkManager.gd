@@ -7,6 +7,7 @@ const MAX_PLAYERS: int = 6
 signal player_connected(peer_id: int, player_info: Dictionary)
 signal player_disconnected(peer_id: int)
 signal player_list_updated()
+signal connection_ready()
 signal connection_failed()
 signal server_disconnected()
 
@@ -40,6 +41,10 @@ func get_local_ip() -> String:
 	var candidates: Array[String] = []
 	for address in IP.get_local_addresses():
 		if address.contains(":") or address == "127.0.0.1" or address.begins_with("169.254."):
+			continue
+		# Common VirtualBox/VM host-only networks. These addresses are not
+		# reachable by another computer on the household Wi-Fi.
+		if address.begins_with("192.168.56.") or address.begins_with("192.168.99."):
 			continue
 		if address.begins_with("192.168."):
 			return address
@@ -113,6 +118,7 @@ func _on_peer_disconnected(id: int) -> void:
 func _on_connected_to_server() -> void:
 	print("Successfully connected to host!")
 	_register_player.rpc_id(1, local_player_name, local_customization)
+	connection_ready.emit()
 
 func _on_connection_failed() -> void:
 	print("Failed to connect to host.")

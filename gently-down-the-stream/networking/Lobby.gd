@@ -96,6 +96,7 @@ func _ready() -> void:
 
 	# NetworkManager signals
 	NetworkManager.player_list_updated.connect(_update_room_ui)
+	NetworkManager.connection_ready.connect(_on_network_ready)
 	NetworkManager.connection_failed.connect(_on_connection_failed)
 	NetworkManager.server_disconnected.connect(_on_server_disconnected)
 
@@ -172,8 +173,15 @@ func _update_customization_ui() -> void:
 	if preview_rower != null:
 		CharacterCustomizer.apply_to_rower(preview_rower, current_customization)
 
+	# Keep customization local while connecting. It is sent once by
+	# _on_network_ready after the ENet handshake completes.
+	if NetworkManager != null and NetworkManager.is_connection_ready():
+		NetworkManager.set_local_customization(current_customization)
+
+func _on_network_ready() -> void:
 	if NetworkManager != null:
 		NetworkManager.set_local_customization(current_customization)
+	connect_status_label.text = "Connected to host."
 
 func _get_player_name() -> String:
 	var input_name = name_input.text.strip_edges()
