@@ -146,7 +146,7 @@ func _setup_preview_rower() -> void:
 		preview_rower.name = "PreviewRower"
 		preview_rower.scale = Vector3(0.85, 0.85, 0.85)
 		preview_rower.position = Vector3(0, 0, 0)
-		preview_rower.rotation_degrees.y = 15.0 # Slight initial angle
+		preview_rower.rotation_degrees.y = 180.0 # Face the preview camera.
 		preview_viewport.add_child(preview_rower)
 		CharacterCustomizer.apply_to_rower(preview_rower, current_customization)
 

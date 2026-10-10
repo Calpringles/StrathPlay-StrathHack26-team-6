@@ -90,6 +90,8 @@ func _create_asset_credit() -> void:
 	warning_panel = panel
 	panel.position = Vector2(24, 85)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Attribution is kept in ASSET_CREDITS.md rather than the gameplay HUD.
+	panel.visible = false
 	river.hud_layer.add_child(panel)
 	var credit = Label.new()
 	credit.text = "Crocodile: Duc Tran • CC BY 4.0"
