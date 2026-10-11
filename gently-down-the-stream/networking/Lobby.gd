@@ -1,6 +1,8 @@
 # res://networking/Lobby.gd
 extends Control
 
+@onready var network_session = get_node_or_null("/root/NetworkManager")
+
 # Panels
 @onready var connect_panel: PanelContainer = $CenterContainer/ConnectPanel
 @onready var room_panel: PanelContainer = $CenterContainer/RoomPanel
@@ -107,8 +109,8 @@ func _ready() -> void:
 	connect_status_label.text = ""
 
 	current_customization = CharacterCustomizer.get_default_customization(0)
-	if NetworkManager != null and not NetworkManager.local_customization.is_empty():
-		current_customization = NetworkManager.local_customization.duplicate()
+	if network_session != null and not network_session.local_customization.is_empty():
+		current_customization = network_session.local_customization.duplicate()
 
 	# Connect Panel Button signals
 	host_button.pressed.connect(_on_host_pressed)
@@ -123,10 +125,10 @@ func _ready() -> void:
 		seat_buttons[i].pressed.connect(func(): _on_seat_selected(idx))
 
 	# NetworkManager signals
-	NetworkManager.player_list_updated.connect(_update_room_ui)
-	NetworkManager.connection_ready.connect(_on_network_ready)
-	NetworkManager.connection_failed.connect(_on_connection_failed)
-	NetworkManager.server_disconnected.connect(_on_server_disconnected)
+	network_session.player_list_updated.connect(_update_room_ui)
+	network_session.connection_ready.connect(_on_network_ready)
+	network_session.connection_failed.connect(_on_connection_failed)
+	network_session.server_disconnected.connect(_on_server_disconnected)
 
 	# Setup 3D preview rower
 	_setup_preview_rower()
@@ -203,12 +205,12 @@ func _update_customization_ui() -> void:
 
 	# Keep customization local while connecting. It is sent once by
 	# _on_network_ready after the ENet handshake completes.
-	if NetworkManager != null and NetworkManager.is_connection_ready():
-		NetworkManager.set_local_customization(current_customization)
+	if network_session != null and network_session.is_connection_ready():
+		network_session.set_local_customization(current_customization)
 
 func _on_network_ready() -> void:
-	if NetworkManager != null:
-		NetworkManager.set_local_customization(current_customization)
+	if network_session != null:
+		network_session.set_local_customization(current_customization)
 	connect_status_label.text = "Connected to host."
 
 func _get_player_name() -> String:
@@ -217,18 +219,18 @@ func _get_player_name() -> String:
 
 func _on_host_pressed() -> void:
 	connect_status_label.text = "Starting host..."
-	var err = NetworkManager.host_game(_get_player_name())
+	var err = network_session.host_game(_get_player_name())
 	if err == OK:
 		connect_panel.visible = false
 		room_panel.visible = true
 		
-		var local_ip = NetworkManager.get_local_ip()
+		var local_ip = network_session.get_local_ip()
 		local_ip_label.text = "LAN IP for friends on your Wi-Fi: %s" % local_ip
 		ip_info_box.visible = true
 		_update_room_ui()
 		_update_customization_ui()
 	else:
-		connect_status_label.text = "Error hosting on port %d" % NetworkManager.DEFAULT_PORT
+		connect_status_label.text = "Error hosting on port %d" % network_session.DEFAULT_PORT
 
 func _on_join_pressed() -> void:
 	var ip = ip_input.text.strip_edges()
@@ -236,7 +238,7 @@ func _on_join_pressed() -> void:
 		ip = "127.0.0.1"
 
 	connect_status_label.text = "Connecting to %s..." % ip
-	var err = NetworkManager.join_game(ip, _get_player_name())
+	var err = network_session.join_game(ip, _get_player_name())
 	if err == OK:
 		connect_panel.visible = false
 		room_panel.visible = true
@@ -246,7 +248,7 @@ func _on_join_pressed() -> void:
 		connect_status_label.text = "Connection failed to start."
 
 func _on_copy_ip_pressed() -> void:
-	var local_ip = NetworkManager.get_local_ip()
+	var local_ip = network_session.get_local_ip()
 	DisplayServer.clipboard_set(local_ip)
 	copy_ip_button.text = "Copied!"
 	await get_tree().create_timer(1.5).timeout
@@ -255,13 +257,13 @@ func _on_copy_ip_pressed() -> void:
 func _on_seat_selected(seat_index: int) -> void:
 	# The lobby can be visible while a client is still connecting. Do not send
 	# RPCs until ENet has completed its handshake.
-	if NetworkManager == null or not NetworkManager.is_connection_ready():
+	if network_session == null or not network_session.is_connection_ready():
 		connect_status_label.text = "Still connecting — please try again in a moment."
 		return
 	if multiplayer.is_server():
-		NetworkManager.request_seat(seat_index)
+		network_session.request_seat(seat_index)
 	else:
-		NetworkManager.request_seat.rpc_id(1, seat_index)
+		network_session.request_seat.rpc_id(1, seat_index)
 
 func _update_room_ui() -> void:
 	if not is_inside_tree() or is_queued_for_deletion() or multiplayer == null:
@@ -275,8 +277,8 @@ func _update_room_ui() -> void:
 		child.queue_free()
 
 	var seated_count = 0
-	for peer_id in NetworkManager.players:
-		var p_info = NetworkManager.players[peer_id]
+	for peer_id in network_session.players:
+		var p_info = network_session.players[peer_id]
 		var seat_idx = p_info.get("seat", -1)
 		var seat_str = SEAT_NAMES[seat_idx] if seat_idx >= 0 and seat_idx < SEAT_NAMES.size() else "Choosing oar..."
 		if seat_idx >= 0:
@@ -294,9 +296,9 @@ func _update_room_ui() -> void:
 		var occupied_by: String = ""
 		var occupied_by_me = false
 
-		for peer_id in NetworkManager.players:
-			if NetworkManager.players[peer_id].get("seat", -1) == i:
-				occupied_by = NetworkManager.players[peer_id].get("name", "Player")
+		for peer_id in network_session.players:
+			if network_session.players[peer_id].get("seat", -1) == i:
+				occupied_by = network_session.players[peer_id].get("name", "Player")
 				if peer_id == my_id:
 					occupied_by_me = true
 				break
@@ -313,25 +315,25 @@ func _update_room_ui() -> void:
 
 	# Host controls
 	start_button.visible = is_server
-	start_button.disabled = not is_server or not NetworkManager.can_start_game()
+	start_button.disabled = not is_server or not network_session.can_start_game()
 	start_button.text = "Start Game" if not start_button.disabled else "Waiting for crew"
 	ready_button.visible = not is_server
-	var local_info: Dictionary = NetworkManager.players.get(my_id, {})
-	ready_button.disabled = not NetworkManager.is_connection_ready() or local_info.get("seat", -1) < 0
+	var local_info: Dictionary = network_session.players.get(my_id, {})
+	ready_button.disabled = not network_session.is_connection_ready() or local_info.get("seat", -1) < 0
 	ready_button.text = "Unready" if local_info.get("ready", false) else "Ready Up"
 	ready_button.tooltip_text = "Choose an oar first" if ready_button.disabled else "Let the host know you are ready"
 
 func _on_ready_pressed() -> void:
-	if not NetworkManager.is_connection_ready() or multiplayer.is_server():
+	if not network_session.is_connection_ready() or multiplayer.is_server():
 		return
-	var local_info: Dictionary = NetworkManager.players.get(multiplayer.get_unique_id(), {})
-	NetworkManager.request_player_ready.rpc_id(1, not local_info.get("ready", false))
+	var local_info: Dictionary = network_session.players.get(multiplayer.get_unique_id(), {})
+	network_session.request_player_ready.rpc_id(1, not local_info.get("ready", false))
 
 func _on_start_game_pressed() -> void:
-	NetworkManager.start_game(TARGET_GAME_SCENE)
+	network_session.start_game(TARGET_GAME_SCENE)
 
 func _on_leave_pressed() -> void:
-	NetworkManager.disconnect_game()
+	network_session.disconnect_game()
 	room_panel.visible = false
 	connect_panel.visible = true
 	connect_status_label.text = "Disconnected."
@@ -357,7 +359,7 @@ func _exit_tree() -> void:
 	var network_manager = get_node_or_null("/root/NetworkManager")
 	if network_manager == null:
 		return
-	var connections = {
+	var connections = {	
 		"player_list_updated": _update_room_ui,
 		"connection_ready": _on_network_ready,
 		"connection_failed": _on_connection_failed,
