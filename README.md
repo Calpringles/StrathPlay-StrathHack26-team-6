@@ -29,11 +29,11 @@ Gently Down The Stream is a cooperative multiplayer river game. Each player cont
 
 ## Tools and Technologies
 
-- Game engine:
-- Programming language:
-- Networking:
-- Assets:
-- Version control:
+- Game engine: Godot 4
+- Programming language: GDScript
+- Networking: Godot High-Level Multiplayer API with ENet
+- Assets: KayKit/GameWorld assets, boat assets, and custom environment resources
+- Version control: Git and GitHub
 
 ## Main Systems
 
