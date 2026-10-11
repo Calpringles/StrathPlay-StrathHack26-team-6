@@ -352,6 +352,7 @@ func _create_river_banks() -> void:
 		terrain_inst.name = "Terrain_Left" if side < 0 else "Terrain_Right"
 		terrain_inst.mesh = terrain_mesh
 		terrain_inst.material_override = bank_mat
+		terrain_inst.visible = true
 		add_child(terrain_inst)
 
 		# Solid flat grass slab. This guarantees the extended bank is visible
@@ -363,6 +364,7 @@ func _create_river_banks() -> void:
 		flat_mesh.size = Vector3(TERRAIN_WIDTH, 0.24, z_total_len)
 		flat_ground.mesh = flat_mesh
 		flat_ground.material_override = bank_mat
+		flat_ground.visible = true
 		flat_ground.position = Vector3(
 			side * (bank_half_x + TERRAIN_WIDTH * 0.5),
 			0.0,
