@@ -16,8 +16,9 @@ enum GameState { PLAYING, WON, SUNK }
 var game_state: GameState = GameState.PLAYING
 
 # --- Gameplay Stats ---
-var boat_health: float = 100.0
-var max_health: float = 100.0
+const STARTING_HULL: float = 100.0
+var boat_health: float = STARTING_HULL
+var max_health: float = STARTING_HULL
 var distance_traveled: float = 0.0
 var sync_combos: int = 0
 var elapsed_time: float = 0.0
@@ -837,15 +838,15 @@ func _create_hud() -> void:
 	health_bar = ProgressBar.new()
 	health_bar.custom_minimum_size = Vector2(140, 24)
 	health_bar.min_value = 0.0
-	health_bar.max_value = 100.0
-	health_bar.value = 100.0
+	health_bar.max_value = max_health
+	health_bar.value = boat_health
 	health_bar.show_percentage = false
 	health_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_style_status_progress(health_bar, Color("#50e3a4"))
 	health_box.add_child(health_bar)
 
 	health_label = Label.new()
-	health_label.text = " 100%"
+	health_label.text = " %d%%" % int(boat_health)
 	health_label.add_theme_font_size_override("font_size", 16)
 	health_box.add_child(health_label)
 	top_bar.add_child(health_box)
